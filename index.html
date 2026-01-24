@@ -52,33 +52,32 @@
     <style>
         body {
             background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
             font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
         }
 
         .slide-container {
-            width: 1920px;
-            height: 1000px;
+            width: 100%;
+            height: auto;
             margin: 0 auto;
             background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
             display: flex;
             flex-direction: column;
             transform-origin: top left;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
         }
 
         @media (max-width: 1920px) {
             body {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                min-height: 100vh;
-                margin: 0;
+                display: block;
             }
 
             .slide-container {
-                transform: scale(calc(100vw / 1920));
+                transform: none;
                 transform-origin: top center;
                 margin-top: 0;
             }
@@ -86,13 +85,13 @@
 
         @media (min-aspect-ratio: 16/9) {
             .slide-container {
-                transform: scale(calc(100vh / 1080));
+                transform: none;
                 transform-origin: center;
             }
         }
 
-        /* Responsivo para móviles */
-        @media (max-width: 768px) {
+        /* Responsivo para móviles y tablets */
+        @media (max-width: 1280px) {
             body {
                 overflow: auto;
             }
@@ -181,9 +180,86 @@
             border-radius: 12px;
         }
 
+        /* Contenedor de video preview */
+        .card-background {
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Imagen de fondo con blur cuando hay preview */
+        .card-background.has-preview .game-thumbnail {
+            filter: blur(8px);
+            opacity: 0.5;
+        }
+
+        /* Video de Vimeo con zoom para cubrir toda la miniatura */
+        .preview-iframe {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120%;
+            height: 120%;
+            transform: translate(-50%, -50%);
+            border: none;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
         .btn-card:hover .game-thumbnail,
         .btn-card:hover .thumbnail-iframe {
             transform: scale(1.08);
+        }
+
+        /* Spinner de carga optimizado */
+        .video-loader {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            z-index: 15;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .video-loader.fade-out {
+            animation: fadeOut 0.3s ease forwards;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(79, 11, 123, 0.1);
+            border-top-color: #4f0b7b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            position: relative;
+        }
+
+        .spinner::after {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border: 3px solid transparent;
+            border-top-color: #cb348c;
+            border-radius: 50%;
+            animation: spin 1.2s linear infinite reverse;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .play-badge {
@@ -298,43 +374,18 @@
         /* Sistema de Previsualización In-Card (Styles managed via Tailwind utility classes) */
     
 /* Merged CSS */
-body{
-  background-color:#f8f9fa;
-  margin:0;
-  height:100vh;
-  overflow:hidden;
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
 }
 
-.slide-container{
-  width:100%;
-  height:100vh;          /* clave */
-  margin:0 auto;
-  background:#f8f9fa;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-}
-
-@media (max-width: 1920px) {
-    body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        margin: 0;
-    }
-    .slide-container {
-       transform: scale(calc(100vw / 1920));
-       transform-origin: top center;
-       margin-top: 0;
-    }
-}
-
-@media (min-aspect-ratio: 16/9) {
-     .slide-container {
-        transform: scale(calc(100vh / 1080));
-        transform-origin: center;
-     }
+.slide-container {
+  width: 100%;
+  height: auto;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  display: flex;
+  flex-direction: column;
 }
 
 .btn-card {
@@ -465,110 +516,299 @@ body{
             </div>
 
             <!-- Contenedor de la Grilla -->
-            <div class="flex-grow flex flex-col items-center justify-start relative">
-                <!-- Controles del carrusel -->
-                <div id="carouselControlsWrapper" class="carousel-controls">
-                    <button id="prevBtn" class="carousel-btn" onclick="changeCarouselPage(-1)">
-                        <span class="text-2xl">⬅️</span>
-                    </button>
-
-                    <div id="carouselDots" class="carousel-dots"></div>
-
-                    <button id="nextBtn" class="carousel-btn" onclick="changeCarouselPage(1)">
-                        <span class="text-2xl">➡️</span>
-                    </button>
-                </div>
-
-                <div class="w-full flex items-start justify-center">
+            <!-- Contenedor de la Grilla (Vertical Grid) -->
+            <div class="flex-grow w-full flex flex-col justify-start relative">
+                <div class="w-full">
                     <!-- Grid de Juegos -->
-                    <div class="grid grid-cols-5 gap-4" id="courseGrid">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-8" id="courseGrid">
                         <!-- Juego 1: Maquinarias -->
-                        <div class="btn-card group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center w-full h-[220px]"
+                        <div class="btn-card relative group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center transition-all duration-300 hover:scale-105 h-auto min-h-[300px]"
                             data-tags="puerto-istgames" data-game-url="https://puerto-istgames.netlify.app/" data-vimeo-id="1157352822"
                             data-vimeo-hash="8a86e2f154">
-                            <div class="relative overflow-hidden rounded-xl">
+                            <div class="card-background w-full h-[150px] rounded-xl overflow-hidden relative flex-shrink-0">
                                 <img src="https://i.vimeocdn.com/video/2110996488-2e1aba49b417ece7b37ae7d3e817c0d6ec26a3693bbd7785874884feee90b191-d_142x80?&r=pad&region=us" 
-                                     alt="Laberinto Portuario" class="game-thumbnail" 
+                                     alt="Laberinto Portuario" class="game-thumbnail w-full h-full object-cover" 
                                      onerror="this.src='https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=400&h=300&fit=crop'" />
-                                <div class="play-badge">▶ JUGAR</div>
                             </div>
-                            <h3 class="font-bold text-base text-gray-800 group-hover:text-primary transition-colors leading-tight">
-                            🚢 Laberinto Portuario</h3>
-                            <p class="text-xs text-gray-600 line-clamp-2">Elige el camino seguro en el puerto</p>
+                            <div
+                                class="play-badge absolute top-6 right-6 bg-accent-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-md z-10">
+                                ▶ Jugar</div>
+                            <div class="card-content flex flex-col gap-2 flex-grow justify-between">
+                                <div>
+                                    <h3 class="card-title font-bold text-lg text-primary leading-tight mt-1">🚢 Laberinto Portuario</h3>
+                                    <div class="card-info flex justify-center gap-2 text-xs text-gray-500 mt-1">
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">⚙️ Maquinaria</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">⏱️ 5 min</span>
+                                    </div>
+                                </div>
+                                <p class="card-desc text-xs text-gray-600 line-clamp-3">
+                                    Navega por el puerto identificando riesgos y tomando decisiones seguras.
+                                </p>
+                            </div>
                         </div>
 
                         <!-- Juego 2: Herramientas -->
-                        <div class="btn-card group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center w-full h-[220px]"
+                        <div class="btn-card relative group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center transition-all duration-300 hover:scale-105 h-auto min-h-[300px]"
                             data-tags="simulacionchat-istgames" data-game-url="https://simulacionchat-istgames.netlify.app/"
                             data-vimeo-id="1157357213" data-vimeo-hash="dc66a8dbc6">
-                            <div class="relative overflow-hidden rounded-xl">
+                            <div class="card-background w-full h-[150px] rounded-xl overflow-hidden relative flex-shrink-0">
                                 <img src="https://i.vimeocdn.com/video/2111001599-9b3270b5b5f87a9651463b105640c84d2cf6d685dabd452e328be5c46f22ed9e-d_142x80?&r=pad&region=us" 
-                                     alt="Herramientas" class="game-thumbnail" />
-                                <div class="play-badge">▶ JUGAR</div>
+                                     alt="Herramientas" class="game-thumbnail w-full h-full object-cover" />
                             </div>
-                            <h3 class="font-bold text-base text-gray-800 group-hover:text-primary transition-colors leading-tight">
-                                📱 Simulación Prestaciones Médicas
-                            </h3>
-                            <p class="text-xs text-gray-600 line-clamp-2">Conoce las prestaciones médicas disponibles</p>
+                            <div
+                                class="play-badge absolute top-6 right-6 bg-accent-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-md z-10">
+                                ▶ Jugar</div>
+                            <div class="card-content flex flex-col gap-2 flex-grow justify-between">
+                                <div>
+                                    <h3 class="card-title font-bold text-lg text-primary leading-tight mt-1">📱 Simulación Médica</h3>
+                                    <div class="card-info flex justify-center gap-2 text-xs text-gray-500 mt-1">
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">🏢 Oficina</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">⏱️ 10 min</span>
+                                    </div>
+                                </div>
+                                <p class="card-desc text-xs text-gray-600 line-clamp-3">
+                                    Interactúa en un chat simulado para aprender sobre prestaciones médicas.
+                                </p>
+                            </div>
                         </div>
 
                         <!-- Juego 3: Izaje -->
-                        <div class="btn-card group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center w-full h-[220px]"
+                        <div class="btn-card relative group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center transition-all duration-300 hover:scale-105 h-auto min-h-[300px]"
                             data-tags="transporte,maquinaria"
                             data-game-url="https://tour.panoee.net/preview?tour=696e8b96cb1262ed5e775a57&scene=696e8bab53181e56c2e9e74f"
                             data-vimeo-id="1157360923" data-vimeo-hash="5f4c3e2f7d">
-                            <div class="relative overflow-hidden rounded-xl">
+                            <div class="card-background w-full h-[150px] rounded-xl overflow-hidden relative flex-shrink-0">
                                 <img src="https://assets.panoee.com/statics/uploads/user/696e8b3ccb1262475e775a52/media/pano/render/zu9lxt43pb.png" 
-                                     alt="Izaje" class="game-thumbnail" />
-                                <div class="play-badge">▶ JUGAR</div>
+                                     alt="Izaje" class="game-thumbnail w-full h-full object-cover" />
                             </div>
-                            <h3 class="font-bold text-base text-gray-800 group-hover:text-primary transition-colors leading-tight">
-                                360 VR Sector Alimentación
-                            </h3>
-                            <p class="text-xs text-gray-600 line-clamp-2">Explora los riesgos en los procesos del rubro alimentario</p>
+                            <div
+                                class="play-badge absolute top-6 right-6 bg-accent-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-md z-10">
+                                ▶ Jugar</div>
+                            <div class="card-content flex flex-col gap-2 flex-grow justify-between">
+                                <div>
+                                    <h3 class="card-title font-bold text-lg text-primary leading-tight mt-1">360 VR Alimentación</h3>
+                                    <div class="card-info flex justify-center gap-2 text-xs text-gray-500 mt-1">
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">🏭 Industrial</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">⏱️ 7 min</span>
+                                    </div>
+                                </div>
+                                <p class="card-desc text-xs text-gray-600 line-clamp-3">
+                                    Explora una planta de alimentos en 360°. Identifica peligros en procesos.
+                                </p>
+                            </div>
                         </div>
 
                         <!-- Juego 4: Transporte -->
-                        <div class="btn-card group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center w-full h-[220px]"
+                        <div class="btn-card relative group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center transition-all duration-300 hover:scale-105 h-auto min-h-[300px]"
                             data-tags="transporte" data-game-url="https://caminata-istgames.netlify.app" data-vimeo-id="1157361982"
                             data-vimeo-hash="f3afc14d0d">
-                            <div class="relative overflow-hidden rounded-xl">
+                            <div class="card-background w-full h-[150px] rounded-xl overflow-hidden relative flex-shrink-0">
                                 <img src="https://i.vimeocdn.com/video/2111008908-589895ba35f69f26216231bcbe38b064893a7516f2eccf1c232e692a6b80d307-d_142x80?&r=pad&region=us" 
-                                     alt="Transporte" class="game-thumbnail" />
-                                <div class="play-badge">▶ JUGAR</div>
+                                     alt="Transporte" class="game-thumbnail w-full h-full object-cover" />
                             </div>
-                            <h3 class="font-bold text-base text-gray-800 group-hover:text-primary transition-colors leading-tight">
-                                🚶‍♂️‍➡️ IST World
-                            </h3>
-                            <p class="text-xs text-gray-600 line-clamp-2">Explora el IST Verso caminando por portales</p>
+                            <div
+                                class="play-badge absolute top-6 right-6 bg-accent-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-md z-10">
+                                ▶ Jugar</div>
+                            <div class="card-content flex flex-col gap-2 flex-grow justify-between">
+                                <div>
+                                    <h3 class="card-title font-bold text-lg text-primary leading-tight mt-1">🚶‍♂️‍➡️ IST World</h3>
+                                    <div class="card-info flex justify-center gap-2 text-xs text-gray-500 mt-1">
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">🚚 Transporte</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">⏱️ 15 min</span>
+                                    </div>
+                                </div>
+                                <p class="card-desc text-xs text-gray-600 line-clamp-3">
+                                    Camina por el IST Verso. Atraviesa portales y descubre distintos entornos laborales.
+                                </p>
+                            </div>
                         </div>
 
                         <!-- Juego 14: VR 360 -->
-                        <div class="btn-card group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center w-full h-[220px]"
+                        <div class="btn-card relative group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center transition-all duration-300 hover:scale-105 h-auto min-h-[300px]"
                             data-tags="vr,construccion" data-game-url="VR360/vr.html" data-vimeo-id="1157461293" data-vimeo-hash="bacf48c011">
-                            <div class="relative overflow-hidden rounded-xl">
+                            <div class="card-background w-full h-[150px] rounded-xl overflow-hidden relative flex-shrink-0">
                                 <img src="https://i.vimeocdn.com/video/2111149424-80e3b2974f1fd674f85bde22bcccedd7b2f0d26312df70e42dd7273e55360976-d_142x80?&r=pad&region=us" 
-                                     alt="VR 360" class="game-thumbnail" />
-                                <div class="play-badge">▶ JUGAR</div>
+                                     alt="VR 360" class="game-thumbnail w-full h-full object-cover" />
                             </div>
-                            <h3 class="font-bold text-base text-gray-800 group-hover:text-primary transition-colors leading-tight">
-                                🥽 VR 360
-                            </h3>
-                            <p class="text-xs text-gray-600 line-clamp-2">Experiencia inmersiva en realidad virtual</p>
+                            <div
+                                class="play-badge absolute top-6 right-6 bg-accent-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-md z-10">
+                                ▶ Jugar</div>
+                            <div class="card-content flex flex-col gap-2 flex-grow justify-between">
+                                <div>
+                                    <h3 class="card-title font-bold text-lg text-primary leading-tight mt-1">🥽 VR Construcción</h3>
+                                    <div class="card-info flex justify-center gap-2 text-xs text-gray-500 mt-1">
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">🏗️ Construcción</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">⏱️ 5 min</span>
+                                    </div>
+                                </div>
+                                <p class="card-desc text-xs text-gray-600 line-clamp-3">
+                                    Sumérgete en una obra de construcción virtual. Experimenta el trabajo en altura de forma segura.
+                                </p>
+                            </div>
                         </div>
 
                         <!-- Juego 15: Rayos X -->
-                        <div class="btn-card group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center w-full h-[220px]"
+                        <div class="btn-card relative group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center transition-all duration-300 hover:scale-105 h-auto min-h-[300px]"
                             data-tags="salud" data-game-url="rayosx/rayosx.html" data-vimeo-id="1157467643" data-vimeo-hash="dd1965b5bb">
-                            <div class="relative overflow-hidden rounded-xl">
+                            <div class="card-background w-full h-[150px] rounded-xl overflow-hidden relative flex-shrink-0">
                                 <img src="https://i.vimeocdn.com/video/2111157635-f159c00bff524212587715fd0ae162f42523e9cda75f25bd6358f934dd40bf05-d_142x80?&r=pad&region=us" 
-                                     alt="Rayos X" class="game-thumbnail" />
-                                <div class="play-badge">▶ JUGAR</div>
+                                     alt="Rayos X" class="game-thumbnail w-full h-full object-cover" />
                             </div>
-                            <h3 class="font-bold text-base text-gray-800 group-hover:text-primary transition-colors leading-tight">
-                                ☢️ Rayos X
-                            </h3>
-                            <p class="text-xs text-gray-600 line-clamp-2">Encuentra los factores de riesgo</p>
+                            <div
+                                class="play-badge absolute top-6 right-6 bg-accent-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-md z-10">
+                                ▶ Jugar</div>
+                            <div class="card-content flex flex-col gap-2 flex-grow justify-between">
+                                <div>
+                                    <h3 class="card-title font-bold text-lg text-primary leading-tight mt-1">☢️ Rayos X</h3>
+                                    <div class="card-info flex justify-center gap-2 text-xs text-gray-500 mt-1">
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">🏥 Salud</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">⏱️ 8 min</span>
+                                    </div>
+                                </div>
+                                <p class="card-desc text-xs text-gray-600 line-clamp-3">
+                                    Usa tu visión de rayos X para detectar factores de riesgo ergonomicos ocultos.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Card Test 1 -->
+                        <div class="btn-card relative group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center transition-all duration-300 hover:scale-105 h-auto min-h-[300px]"
+                            data-tags="test" data-game-url="#" data-vimeo-id="1157352822"
+                            data-vimeo-hash="8a86e2f154">
+                            <div class="card-background w-full h-[150px] rounded-xl overflow-hidden relative flex-shrink-0">
+                                <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop" 
+                                     alt="Test 1" class="game-thumbnail w-full h-full object-cover" />
+                            </div>
+                            <div class="play-badge absolute top-6 right-6 bg-accent-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-md z-10">
+                                ▶ Jugar</div>
+                            <div class="card-content flex flex-col gap-2 flex-grow justify-between">
+                                <div>
+                                    <h3 class="card-title font-bold text-lg text-primary leading-tight mt-1">🎮 Juego Test 1</h3>
+                                    <div class="card-info flex justify-center gap-2 text-xs text-gray-500 mt-1">
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">🏢 Test</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">⏱️ 5 min</span>
+                                    </div>
+                                </div>
+                                <p class="card-desc text-xs text-gray-600 line-clamp-3">
+                                    Este es un juego de prueba para verificar la funcionalidad del portal.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Card Test 2 -->
+                        <div class="btn-card relative group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center transition-all duration-300 hover:scale-105 h-auto min-h-[300px]"
+                            data-tags="test" data-game-url="#" data-vimeo-id="1157357213" data-vimeo-hash="dc66a8dbc6">
+                            <div class="card-background w-full h-[150px] rounded-xl overflow-hidden relative flex-shrink-0">
+                                <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=300&fit=crop" 
+                                     alt="Test 2" class="game-thumbnail w-full h-full object-cover" />
+                            </div>
+                            <div class="play-badge absolute top-6 right-6 bg-accent-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-md z-10">
+                                ▶ Jugar</div>
+                            <div class="card-content flex flex-col gap-2 flex-grow justify-between">
+                                <div>
+                                    <h3 class="card-title font-bold text-lg text-primary leading-tight mt-1">🎮 Juego Test 2</h3>
+                                    <div class="card-info flex justify-center gap-2 text-xs text-gray-500 mt-1">
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">🏢 Test</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">⏱️ 8 min</span>
+                                    </div>
+                                </div>
+                                <p class="card-desc text-xs text-gray-600 line-clamp-3">
+                                    Segundo juego de prueba con contenido placeholder para testing.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Card Test 3 -->
+                        <div class="btn-card relative group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center transition-all duration-300 hover:scale-105 h-auto min-h-[300px]"
+                            data-tags="test" data-game-url="#" data-vimeo-id="1157360923" data-vimeo-hash="5f4c3e2f7d">
+                            <div class="card-background w-full h-[150px] rounded-xl overflow-hidden relative flex-shrink-0">
+                                <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&h=300&fit=crop" 
+                                     alt="Test 3" class="game-thumbnail w-full h-full object-cover" />
+                            </div>
+                            <div class="play-badge absolute top-6 right-6 bg-accent-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-md z-10">
+                                ▶ Jugar</div>
+                            <div class="card-content flex flex-col gap-2 flex-grow justify-between">
+                                <div>
+                                    <h3 class="card-title font-bold text-lg text-primary leading-tight mt-1">🎮 Juego Test 3</h3>
+                                    <div class="card-info flex justify-center gap-2 text-xs text-gray-500 mt-1">
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">🏢 Test</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">⏱️ 10 min</span>
+                                    </div>
+                                </div>
+                                <p class="card-desc text-xs text-gray-600 line-clamp-3">
+                                    Tercer juego de prueba para validar la interfaz con múltiples juegos.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Card Test 4 -->
+                        <div class="btn-card relative group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center transition-all duration-300 hover:scale-105 h-auto min-h-[300px]"
+                            data-tags="test" data-game-url="#" data-vimeo-id="1157361982"
+                            data-vimeo-hash="f3afc14d0d">
+                            <div class="card-background w-full h-[150px] rounded-xl overflow-hidden relative flex-shrink-0">
+                                <img src="https://images.unsplash.com/photo-1516321318423-f06f70d504f0?w=400&h=300&fit=crop" 
+                                     alt="Test 4" class="game-thumbnail w-full h-full object-cover" />
+                            </div>
+                            <div class="play-badge absolute top-6 right-6 bg-accent-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-md z-10">
+                                ▶ Jugar</div>
+                            <div class="card-content flex flex-col gap-2 flex-grow justify-between">
+                                <div>
+                                    <h3 class="card-title font-bold text-lg text-primary leading-tight mt-1">🎮 Juego Test 4</h3>
+                                    <div class="card-info flex justify-center gap-2 text-xs text-gray-500 mt-1">
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">🏢 Test</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">⏱️ 6 min</span>
+                                    </div>
+                                </div>
+                                <p class="card-desc text-xs text-gray-600 line-clamp-3">
+                                    Cuarto juego de prueba para evaluar el scroll y la responsividad.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Card Test 5 -->
+                        <div class="btn-card relative group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center transition-all duration-300 hover:scale-105 h-auto min-h-[300px]"
+                            data-tags="test" data-game-url="#" data-vimeo-id="1157461293" data-vimeo-hash="bacf48c011">
+                            <div class="card-background w-full h-[150px] rounded-xl overflow-hidden relative flex-shrink-0">
+                                <img src="https://images.unsplash.com/photo-1493487785876-f7350f1f3088?w=400&h=300&fit=crop" 
+                                     alt="Test 5" class="game-thumbnail w-full h-full object-cover" />
+                            </div>
+                            <div class="play-badge absolute top-6 right-6 bg-accent-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-md z-10">
+                                ▶ Jugar</div>
+                            <div class="card-content flex flex-col gap-2 flex-grow justify-between">
+                                <div>
+                                    <h3 class="card-title font-bold text-lg text-primary leading-tight mt-1">🎮 Juego Test 5</h3>
+                                    <div class="card-info flex justify-center gap-2 text-xs text-gray-500 mt-1">
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">🏢 Test</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">⏱️ 12 min</span>
+                                    </div>
+                                </div>
+                                <p class="card-desc text-xs text-gray-600 line-clamp-3">
+                                    Quinto juego de prueba con características adicionales para testing.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Card Test 6 -->
+                        <div class="btn-card relative group cursor-pointer bg-white border-2 border-transparent hover:border-primary rounded-2xl p-4 shadow-soft flex flex-col gap-3 text-center transition-all duration-300 hover:scale-105 h-auto min-h-[300px]"
+                            data-tags="test" data-game-url="#" data-vimeo-id="1157467643" data-vimeo-hash="dd1965b5bb">
+                            <div class="card-background w-full h-[150px] rounded-xl overflow-hidden relative flex-shrink-0">
+                                <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=300&fit=crop" 
+                                     alt="Test 6" class="game-thumbnail w-full h-full object-cover" />
+                            </div>
+                            <div class="play-badge absolute top-6 right-6 bg-accent-orange text-white px-3 py-1 rounded-full text-xs font-bold shadow-md z-10">
+                                ▶ Jugar</div>
+                            <div class="card-content flex flex-col gap-2 flex-grow justify-between">
+                                <div>
+                                    <h3 class="card-title font-bold text-lg text-primary leading-tight mt-1">🎮 Juego Test 6</h3>
+                                    <div class="card-info flex justify-center gap-2 text-xs text-gray-500 mt-1">
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">🏢 Test</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">⏱️ 7 min</span>
+                                    </div>
+                                </div>
+                                <p class="card-desc text-xs text-gray-600 line-clamp-3">
+                                    Sexto juego de prueba para completar la batería de testing.
+                                </p>
+                            </div>
                         </div>
 
                         <div class="hidden"></div>
@@ -639,21 +879,40 @@ body{
             const container = card.querySelector('.relative'); // container of image
             if (!container) return;
 
-            // Create iframe
+            // El loader ya existe, no necesitamos crearlo de nuevo
+            const loader = container.querySelector('.video-loader');
+
+            // Create iframe con zoom fijo del 120%
             const iframe = document.createElement('iframe');
-            iframe.className = 'preview-iframe absolute inset-0 w-full h-full object-cover z-20 rounded-xl';
+            iframe.className = 'preview-iframe z-20';
             iframe.src = `https://player.vimeo.com/video/${vimeoId}?h=${vimeoHash}&autoplay=1&loop=1&muted=1&background=1&title=0&byline=0&portrait=0`;
             iframe.allow = "autoplay; fullscreen";
             iframe.style.opacity = '0';
             iframe.style.transition = 'opacity 0.5s ease';
             
-            // Append
+            // Hide loader 2 seconds after video starts playing
+            iframe.onload = function() {
+                // Fade in iframe immediately
+                requestAnimationFrame(() => {
+                    iframe.style.opacity = '1';
+                });
+                
+                // Wait 2 seconds before hiding loader
+                if (loader) {
+                    setTimeout(() => {
+                        loader.classList.add('fade-out');
+                        setTimeout(() => {
+                            loader.remove();
+                        }, 300);
+                    }, 2000);
+                }
+            };
+            
+            // Append iframe
             container.appendChild(iframe);
             
-            // Fade in
-            requestAnimationFrame(() => {
-                iframe.style.opacity = '1';
-            });
+            // Agregar clase para aplicar blur al fondo
+            container.classList.add('has-preview');
             
             // Visual cues for active state
             card.classList.add('preview-active', 'ring-4', 'ring-accent-cyan');
@@ -661,14 +920,22 @@ body{
 
             function removeInCardPreview(card) {
                 const iframe = card.querySelector('.preview-iframe');
+                const cardBackground = card.querySelector('.card-background');
+                
                 if (iframe) {
                     iframe.style.opacity = '0';
                     setTimeout(() => {
                         iframe.remove();
                     }, 300); // Wait for fade out
+                }
+                
+                // Remover clase has-preview para quitar blur
+                if (cardBackground) {
+                    cardBackground.classList.remove('has-preview');
+                }
+                
+                card.classList.remove('preview-active', 'ring-4', 'ring-accent-cyan');
             }
-            card.classList.remove('preview-active', 'ring-4', 'ring-accent-cyan');
-        }
 
         function filterByTag(selectedTag) {
             var cards = document.querySelectorAll('#courseGrid .btn-card');
@@ -696,61 +963,26 @@ body{
             // Actualizar contador
             document.getElementById('visibleCount').textContent = visibleCount;
             document.getElementById('totalCount').textContent = totalCount;
-
-            // Reiniciar carrusel a la primera página
-            currentPage = 0;
-            updateCarousel();
-        }
-
-        // Variables del carrusel
-        let currentPage = 0;
-
-
-        function getVisibleCards() {
-            const allCards = document.querySelectorAll('#courseGrid .btn-card');
-            const visibleCards = [];
-            allCards.forEach(card => {
-                if (!card.classList.contains('filtered-out')) {
-                    visibleCards.push(card);
-                }
-            });
-            return visibleCards;
         }
 
 
-
-        function updateDots(totalPages) {
-            const dotsContainer = document.getElementById('carouselDots');
-            dotsContainer.innerHTML = '';
-
-            if (totalPages <= 1) return;
-
-            for (let i = 0; i < totalPages; i++) {
-                const dot = document.createElement('div');
-                dot.className = 'carousel-dot' + (i === currentPage ? ' active' : '');
-                dot.onclick = () => {
-                    currentPage = i;
-                    updateCarousel();
-                };
-                dotsContainer.appendChild(dot);
-            }
-        }
-
-        function changeCarouselPage(direction) {
-            const visibleCards = getVisibleCards();
-            const totalPages = Math.ceil(visibleCards.length / itemsPerPage);
-
-            currentPage += direction;
-
-            // Limitar el rango de páginas
-            if (currentPage < 0) currentPage = 0;
-            if (currentPage >= totalPages) currentPage = totalPages - 1;
-
-            updateCarousel();
-        }
 
                 // Initialize functionality events
         document.addEventListener('DOMContentLoaded', function () {
+            console.log('✅ DOM Cargado');
+            console.log('Body overflow-y:', window.getComputedStyle(document.body).overflowY);
+            console.log('Body height:', document.body.scrollHeight);
+            console.log('Window height:', window.innerHeight);
+            
+            // Debug scroll
+            document.addEventListener('scroll', function() {
+                console.log('📍 Scroll:', {
+                    scrollY: window.scrollY,
+                    scrollHeight: document.documentElement.scrollHeight,
+                    clientHeight: document.documentElement.clientHeight
+                });
+            });
+            
             const cards = document.querySelectorAll('.btn-card');
 
             cards.forEach(card => {
@@ -762,6 +994,16 @@ body{
                     const vimeoHash = card.getAttribute('data-vimeo-hash');
 
                     if (vimeoId) {
+                        // Mostrar loader inmediatamente
+                        const container = card.querySelector('.relative');
+                        if (container && !card.querySelector('.video-loader')) {
+                            const loader = document.createElement('div');
+                            loader.className = 'video-loader';
+                            loader.innerHTML = '<div class="spinner"></div>';
+                            container.appendChild(loader);
+                        }
+                        
+                        // Cargar video después de un pequeño delay
                         previewTimeout = setTimeout(() => {
                             showInCardPreview(card, vimeoId, vimeoHash);
                         }, 2000);
@@ -773,6 +1015,13 @@ body{
                         clearTimeout(previewTimeout);
                         previewTimeout = null;
                     }
+                    
+                    // Remover loader si existe
+                    const loader = card.querySelector('.video-loader');
+                    if (loader) {
+                        loader.remove();
+                    }
+                    
                     removeInCardPreview(card);
                 });
 
@@ -786,113 +1035,15 @@ body{
                 });
             });
 
-            // Inicializar carrusel
-            updateCarousel();
+            // Inicializar filtros
+            filterByTag('todos');
         });
 
 
 /* Merged app.js */
 
 
-let itemsPerPage = 10;
 
-function recalcCarouselLayout() {
-  const grid = document.getElementById('courseGrid');
-  if (!grid) return;
-
-  // Contenedor que realmente define el alto disponible para el grid
-  const gridViewport = grid.parentElement; // tu .carousel-container (w-full h-full ...)
-  const controls = document.querySelector('.carousel-controls');
-
-  const viewportW = gridViewport.clientWidth;
-
-  // Alto disponible real = alto del contenedor - alto de los controles
-  const viewportH = gridViewport.clientHeight - (controls ? controls.offsetHeight : 0);
-
-  // Parámetros de diseño
-  const GAP = 16;          // gap-4
-  const MIN_CARD_W = 240;  // tu min deseado por tarjeta
-  const MAX_CARD_H = 210;  // tu altura ideal actual
-
-  // Calcula columnas por ancho
-  const cols = Math.max(1, Math.floor((viewportW + GAP) / (MIN_CARD_W + GAP)));
-
-  // Primero estima filas con altura ideal, pero limitamos a máximo 2 filas
-  let rows = Math.max(1, Math.floor((viewportH + GAP) / (MAX_CARD_H + GAP)));
-  rows = Math.min(rows, 2); // Limitar a máximo 2 filas
-
-  // Ahora ajusta altura de card para que CALCE perfecto con esas filas
-  // cardH = (altoDisponible - gapsEntreFilas) / filas
-  const cardH = Math.floor((viewportH - (rows - 1) * GAP) / rows);
-
-  // Si quedó ridículamente chica, reduce filas y recalcula (para evitar cards enanas)
-  if (cardH < 150 && rows > 1) {
-    rows -= 1;
-  }
-
-  const finalCardH = Math.min(MAX_CARD_H, Math.floor((viewportH - (rows - 1) * GAP) / rows));
-
-  // Setea variables CSS
-  grid.style.setProperty('--cols', cols);
-  grid.style.setProperty('--cardH', `${finalCardH}px`);
-
-  // Items por página = cols * rows
-  itemsPerPage = cols * rows;
-}
-
-
-
-
-function updateCarousel() {
-  recalcCarouselLayout();
-
-  const visibleCards = getVisibleCards();
-  const totalPages = Math.ceil(visibleCards.length / itemsPerPage);
-  const allCards = document.querySelectorAll('#courseGrid .btn-card');
-
-  // Si la página actual queda fuera (por resize o filtro), corrige
-  if (currentPage > totalPages - 1) currentPage = Math.max(0, totalPages - 1);
-
-  allCards.forEach(card => { card.style.display = 'none'; });
-
-  const startIndex = currentPage * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, visibleCards.length);
-
-  for (let i = startIndex; i < endIndex; i++) {
-    visibleCards[i].style.display = '';
-  }
-
-  const prevBtn = document.getElementById('prevBtn');
-  const nextBtn = document.getElementById('nextBtn');
-
-  prevBtn.disabled = currentPage === 0;
-  nextBtn.disabled = currentPage >= totalPages - 1 || totalPages === 0;
-
-  // Mostrar/ocultar controles del carrusel según cantidad
-  const carouselControls = document.getElementById('carouselControlsWrapper');
-  if (carouselControls) {
-      if (visibleCards.length > itemsPerPage) {
-          carouselControls.classList.remove('hidden');
-      } else {
-          carouselControls.classList.add('hidden');
-      }
-  }
-
-  updateDots(totalPages);
-
-  // Actualizar contadores
-  const displayedCount = endIndex - startIndex;
-  document.getElementById('visibleCount').textContent = displayedCount;
-  document.getElementById('totalCount').textContent = visibleCards.length;
-}
-
-let resizeTimer = null;
-window.addEventListener('resize', () => {
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    updateCarousel();
-  }, 100);
-});
 
 
 </script>
