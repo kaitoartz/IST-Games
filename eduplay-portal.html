@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduPlay - Portal Educativo Gamificado</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Söhne', 'Avenir Next', 'system-ui', 'sans-serif'],
+          },
+          animation: {
+            'appear': 'appear 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'appear-zoom': 'appear-zoom 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'float': 'float 6s ease-in-out infinite',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'shimmer': 'shimmer 1.5s infinite linear',
+          },
+          keyframes: {
+            appear: {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            'appear-zoom': {
+              '0%': { opacity: '0', transform: 'scale(0.95)' },
+              '100%': { opacity: '1', transform: 'scale(1)' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-20px)' },
+            },
+            shimmer: {
+              '0%': { transform: 'translateX(-100%)' },
+              '100%': { transform: 'translateX(100%)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Global Styles -->
+  <style>
+    :root {
+      --bg: #f8fafc;
+    }
+    body {
+      background-color: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+    }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #2563eb, #06b6d4, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
+
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script>
+    // Lucide React UMD expects lowercase 'react' global
+    window.react = window.React;
+  </script>
+  
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
+  
+  <!-- Framer Motion -->
+  <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide-react@0.292.0/dist/umd/lucide-react.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { motion, AnimatePresence, useMotionValue, useTransform, useSpring } = window.Motion;
+    const { ChevronRight, Star, Play, Award, Zap, BookOpen, FlaskConical, Trophy, User, ArrowRight, CheckCircle2, XCircle, Gamepad2, Brain, Compass, Users, Sparkles, Code, Globe, Shield } = window.LucideReact;
+
+    // --- MOCK DATA ---
+    const MOCK_USER = {
+      name: "Leo",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Leo&backgroundColor=ffdfbf",
+      level: 12,
+      xp: 4500,
+      nextLevelXp: 5000,
+      streak: 5,
+      completedChallenges: 34,
+      badges: [
+        { id: 1, name: "Matemático Veloz", icon: Zap, color: "text-yellow-500", bg: "bg-yellow-100" },
+        { id: 2, name: "Lector Curioso", icon: BookOpen, color: "text-blue-500", bg: "bg-blue-100" },
+        { id: 3, name: "Científico Loco", icon: FlaskConical, color: "text-green-500", bg: "bg-green-100" }
+      ]
+    };
+
+    const MOCK_GAMES = [
+      { id: "g1", title: "Aventura Matemática", subject: "Matemáticas", level: "8-10", duration: "10 min", points: 150, color: "from-blue-500 to-cyan-400", bg: "bg-blue-50", icon: Zap },
+      { id: "g2", title: "Memoria Espacial", subject: "Memoria", level: "5-7", duration: "5 min", points: 100, color: "from-purple-500 to-pink-400", bg: "bg-purple-50", icon: Brain },
+      { id: "g3", title: "Laboratorio Químico", subject: "Ciencias", level: "11-13", duration: "15 min", points: 200, color: "from-green-500 to-emerald-400", bg: "bg-green-50", icon: FlaskConical },
+      { id: "g4", title: "Lógica de Bloques", subject: "Programación", level: "11-13", duration: "20 min", points: 250, color: "from-orange-500 to-yellow-400", bg: "bg-orange-50", icon: Code },
+      { id: "g5", title: "Palabras Mágicas", subject: "Lectura", level: "5-7", duration: "10 min", points: 120, color: "from-red-500 to-rose-400", bg: "bg-red-50", icon: BookOpen },
+      { id: "g6", title: "Safari en Inglés", subject: "Inglés", level: "8-10", duration: "15 min", points: 180, color: "from-indigo-500 to-violet-400", bg: "bg-indigo-50", icon: Globe }
+    ];
+
+    const MOCK_QUIZ = {
+      title: "Aventura Matemática",
+      questions: [
+        { id: 1, question: "¿Cuánto es 7 + 8?", options: ["14", "15", "16", "13"], correct: 1 },
+        { id: 2, question: "Si tienes 3 manzanas y te dan 4 más, ¿cuántas tienes?", options: ["6", "8", "7", "9"], correct: 2 },
+        { id: 3, question: "¿Cuál es el doble de 6?", options: ["10", "12", "14", "18"], correct: 1 }
+      ]
+    };
+
+    // --- REUSABLE COMPONENTS ---
+    const Button = ({ children, variant = 'primary', size = 'md', className = '', onClick, ...props }) => {
+      const base = "inline-flex items-center justify-center rounded-2xl font-bold transition-all duration-300 relative overflow-hidden group";
+      const variants = {
+        primary: "bg-blue-600 text-white shadow-[0_8px_30px_rgb(37,99,235,0.3)] hover:shadow-[0_8px_30px_rgb(37,99,235,0.5)] hover:-translate-y-1",
+        secondary: "bg-white text-zinc-800 border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 shadow-sm hover:-translate-y-1",
+        ghost: "bg-transparent text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
+        glow: "bg-zinc-900 text-white shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_rgba(255,255,255,0.5)] border border-zinc-700 hover:-translate-y-1"
+      };
+      const sizes = { sm: "px-4 py-2 text-sm", md: "px-6 py-3 text-base", lg: "px-8 py-4 text-lg" };
+      
+      return (
+        <motion.button 
+          whileTap={{ scale: 0.95 }}
+          className={`${base} ${variants[variant]} ${sizes[size]} ${className}`} 
+          onClick={onClick}
+          {...props}
+        >
+          {variant === 'primary' && <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />}
+          <span className="relative flex items-center justify-center gap-2">{children}</span>
+        </motion.button>
+      );
+    };
+
+    const Badge = ({ children, className = '' }) => (
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${className}`}>
+        {children}
+      </span>
+    );
+
+    const PremiumGameCard = ({ title, subject, level, duration, points, color, bg, icon: Icon, onClick }) => {
+      const x = useMotionValue(0);
+      const y = useMotionValue(0);
+
+      const mouseXSpring = useSpring(x);
+      const mouseYSpring = useSpring(y);
+
+      const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["7.5deg", "-7.5deg"]);
+      const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-7.5deg", "7.5deg"]);
+
+      const handleMouseMove = (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const xPct = mouseX / width - 0.5;
+        const yPct = mouseY / height - 0.5;
+        x.set(xPct);
+        y.set(yPct);
+      };
+
+      const handleMouseLeave = () => {
+        x.set(0);
+        y.set(0);
+      };
+
+      return (
+        <motion.div
+          style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          onClick={onClick}
+          className={`relative w-full rounded-[2rem] p-1 cursor-pointer group bg-gradient-to-b from-white to-zinc-50 border border-zinc-200 shadow-sm hover:shadow-2xl transition-shadow duration-500`}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          
+          <div className="relative bg-white rounded-[1.8rem] p-6 h-full flex flex-col z-10 overflow-hidden">
+            <div className={`absolute -right-10 -top-10 w-32 h-32 rounded-full ${bg} opacity-50 blur-2xl group-hover:blur-3xl transition-all duration-500`} />
+            
+            <div className="flex justify-between items-start mb-6 relative z-20" style={{ transform: "translateZ(30px)" }}>
+              <Badge className="bg-zinc-100 text-zinc-700 border border-zinc-200 shadow-sm">
+                <Icon size={14} className="opacity-70"/> {subject}
+              </Badge>
+              <Badge className="bg-yellow-50 text-yellow-600 border border-yellow-200 shadow-sm">
+                <Star size={14} fill="currentColor" /> {points}
+              </Badge>
+            </div>
+            
+            <div className="flex-grow relative z-20" style={{ transform: "translateZ(40px)" }}>
+              <h3 className="text-2xl font-bold text-zinc-900 mb-3 group-hover:text-blue-600 transition-colors">{title}</h3>
+              <div className="flex items-center gap-4 text-sm text-zinc-500 font-medium">
+                <span className="flex items-center gap-1.5"><User size={16}/> Lvl {level}</span>
+                <span className="flex items-center gap-1.5"><Play size={16}/> {duration}</span>
+              </div>
+            </div>
+            
+            <div className="mt-8 flex items-center justify-between relative z-20" style={{ transform: "translateZ(20px)" }}>
+              <div className="flex -space-x-3">
+                {[1,2,3].map(i => (
+                  <img key={i} src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i+title}&backgroundColor=e2e8f0`} className="w-10 h-10 rounded-full border-2 border-white shadow-sm" alt="player" />
+                ))}
+              </div>
+              <div className="w-12 h-12 rounded-full bg-zinc-900 text-white flex items-center justify-center group-hover:bg-blue-600 group-hover:scale-110 transition-all duration-300 shadow-md">
+                <Play size={20} fill="currentColor" className="ml-1"/>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      );
+    };
+
+    // --- VIEWS ---
+    const Landing = ({ onNavigate }) => (
+      <div className="min-h-screen pt-20">
+        <section className="relative overflow-hidden px-4 sm:px-6 lg:px-8 py-20 lg:py-32 max-w-7xl mx-auto flex flex-col items-center text-center">
+          
+          {/* Animated Background Elements */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-tr from-blue-400/20 to-purple-400/20 rounded-full blur-[100px] -z-10 animate-pulse-slow" />
+          <motion.div animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }} transition={{ duration: 6, repeat: Infinity }} className="absolute top-20 left-10 lg:left-20 w-16 h-16 bg-blue-100 rounded-2xl rotate-12 blur-[2px] -z-10 flex items-center justify-center text-blue-500"><Gamepad2 size={32}/></motion.div>
+          <motion.div animate={{ y: [0, 30, 0], rotate: [0, -10, 0] }} transition={{ duration: 8, repeat: Infinity }} className="absolute bottom-40 right-10 lg:right-32 w-24 h-24 bg-yellow-100 rounded-full blur-[2px] -z-10 flex items-center justify-center text-yellow-500"><Star size={40} fill="currentColor"/></motion.div>
+          <motion.div animate={{ y: [0, -15, 0], x: [0, 15, 0] }} transition={{ duration: 7, repeat: Infinity }} className="absolute top-40 right-20 w-12 h-12 bg-purple-100 rounded-full blur-[1px] -z-10 flex items-center justify-center text-purple-500"><Brain size={24}/></motion.div>
+
+          <div className="flex flex-col items-center gap-6 sm:gap-8 z-10 w-full">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-md border border-zinc-200/50 text-zinc-800 font-bold text-sm shadow-sm">
+                <Sparkles size={16} className="text-yellow-500"/> Nueva forma de aprender
+              </span>
+            </motion.div>
+            
+            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-zinc-900 tracking-tight leading-[1.1] max-w-5xl">
+              Descubre un <span className="gradient-text">universo</span> de conocimiento.
+            </motion.h1>
+            
+            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="text-lg sm:text-xl text-zinc-600 max-w-2xl font-medium leading-relaxed">
+              Plataforma premium de aprendizaje gamificado. Retos diarios, medallas y un catálogo infinito para entrenar tu mente de forma interactiva.
+            </motion.p>
+            
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto mt-4">
+              <Button size="lg" onClick={() => onNavigate('catalog')} className="w-full sm:w-auto text-lg px-8 shadow-blue-500/40">Explorar Juegos <ArrowRight size={20}/></Button>
+              <Button variant="secondary" size="lg" onClick={() => onNavigate('dashboard')} className="w-full sm:w-auto text-lg px-8">Ver Dashboard</Button>
+            </motion.div>
+          </div>
+
+          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.5 }} className="w-full max-w-5xl mt-20 relative">
+            <div className="absolute inset-0 bg-gradient-to-t from-[#f8fafc] via-transparent to-transparent z-20 h-full w-full pointer-events-none rounded-t-[2rem]" />
+            <div className="glass-panel p-2 rounded-[2rem] shadow-2xl relative z-10 border border-white/40">
+              <div className="bg-white rounded-[1.5rem] overflow-hidden border border-zinc-100 shadow-inner flex flex-col">
+                {/* Fake Browser Chrome */}
+                <div className="bg-zinc-50 border-b border-zinc-100 px-4 py-3 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                  <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                  <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                </div>
+                <div className="p-6 md:p-10 bg-zinc-50 grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="md:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-zinc-100 relative overflow-hidden group hover:border-blue-200 transition-colors">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="relative z-10">
+                      <div className="h-4 w-32 bg-zinc-200 rounded-full mb-6"></div>
+                      <div className="space-y-3">
+                        <div className="h-3 w-full bg-zinc-100 rounded-full"></div>
+                        <div className="h-3 w-5/6 bg-zinc-100 rounded-full"></div>
+                        <div className="h-3 w-4/6 bg-zinc-100 rounded-full"></div>
+                      </div>
+                      <div className="mt-8 grid grid-cols-2 gap-4">
+                        <div className="h-24 bg-blue-50 rounded-xl border border-blue-100"></div>
+                        <div className="h-24 bg-purple-50 rounded-xl border border-purple-100"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-zinc-100 flex flex-col items-center justify-center group hover:border-yellow-200 transition-colors relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-yellow-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="w-24 h-24 rounded-full border-4 border-yellow-100 flex items-center justify-center mb-4 relative z-10">
+                      <Trophy size={40} className="text-yellow-500 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <div className="h-4 w-24 bg-zinc-200 rounded-full mb-2 relative z-10"></div>
+                    <div className="h-3 w-16 bg-zinc-100 rounded-full relative z-10"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </section>
+
+        {/* Benefits Section */}
+        <section className="py-24 bg-zinc-900 text-white px-6 lg:px-8 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent"></div>
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-20">
+              <h2 className="text-4xl lg:text-5xl font-bold mb-6">Aprendizaje que <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">engancha.</span></h2>
+              <p className="text-zinc-400 max-w-2xl mx-auto text-xl">Diseñado con principios de ciencias cognitivas para mantener la motivación al máximo nivel.</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                { title: "Gamificación Real", desc: "No solo puntos. Una economía de XP real, niveles, rachas y recompensas que importan.", icon: Gamepad2, color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20" },
+                { title: "Seguimiento Detallado", desc: "Panel para padres y profesores con métricas de precisión, tiempo y áreas de mejora.", icon: Shield, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
+                { title: "Contenido Premium", desc: "Juegos desarrollados por educadores, abarcando desde matemáticas hasta lógica computacional.", icon: BookOpen, color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" }
+              ].map((b, i) => (
+                <motion.div key={i} whileHover={{ y: -5 }} className={`bg-zinc-800/40 border border-zinc-700/50 p-10 rounded-[2rem] backdrop-blur-sm relative overflow-hidden group`}>
+                  <div className={`absolute top-0 right-0 w-32 h-32 ${b.bg} rounded-full blur-3xl -mr-10 -mt-10 transition-opacity opacity-50 group-hover:opacity-100`}></div>
+                  <div className={`w-14 h-14 rounded-2xl ${b.bg} flex items-center justify-center mb-8`}>
+                    <b.icon size={28} className={b.color}/>
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4">{b.title}</h3>
+                  <p className="text-zinc-400 text-lg leading-relaxed">{b.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Categories Section */}
+        <section className="px-6 lg:px-8 py-20 bg-white">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold text-zinc-900 mb-4">Explora por Categorías</h2>
+              <p className="text-xl text-zinc-600">Aprende lo que más te apasiona.</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[
+                { name: "Matemáticas", icon: Zap, color: "text-blue-500", bg: "bg-blue-50 hover:bg-blue-100" },
+                { name: "Ciencias", icon: FlaskConical, color: "text-green-500", bg: "bg-green-50 hover:bg-green-100" },
+                { name: "Lectura", icon: BookOpen, color: "text-red-500", bg: "bg-red-50 hover:bg-red-100" },
+                { name: "Lógica", icon: Brain, color: "text-purple-500", bg: "bg-purple-50 hover:bg-purple-100" }
+              ].map((cat, i) => (
+                <div key={i} onClick={() => onNavigate('catalog')} className={`cursor-pointer rounded-[2rem] p-8 text-center transition-colors duration-300 ${cat.bg}`}>
+                  <div className={`w-16 h-16 mx-auto rounded-2xl bg-white flex items-center justify-center mb-4 shadow-sm ${cat.color}`}>
+                    <cat.icon size={32} />
+                  </div>
+                  <h3 className="font-bold text-zinc-900">{cat.name}</h3>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Featured Games */}
+        <section className="px-6 lg:px-8 py-32 bg-zinc-50 relative">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-left">
+              <div>
+                <h2 className="text-4xl font-bold text-zinc-900 mb-4">Juegos Destacados</h2>
+                <p className="text-xl text-zinc-600">Empieza tu aventura con los favoritos.</p>
+              </div>
+              <Button variant="secondary" onClick={() => onNavigate('catalog')} className="gap-2">Ver todo el catálogo <ArrowRight size={18}/></Button>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {MOCK_GAMES.slice(0,3).map((game, i) => (
+                <motion.div key={game.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
+                  <PremiumGameCard {...game} onClick={() => onNavigate('game', { gameId: game.id })} />
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials */}
+        <section className="py-24 bg-white px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold text-zinc-900 mb-4">Lo que dicen de nosotros</h2>
+              <p className="text-xl text-zinc-600">Familias y educadores que ya disfrutan EduPlay.</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                { text: "Mi hijo por fin disfruta practicar matemáticas. ¡La gamificación hace toda la diferencia!", author: "María P.", role: "Madre" },
+                { text: "Excelente herramienta para asignar retos adicionales en clase. Muy intuitiva.", author: "Carlos R.", role: "Profesor" },
+                { text: "Me encanta ganar insignias cada vez que completo los retos de ciencia.", author: "Sofi (10 años)", role: "Estudiante" }
+              ].map((test, i) => (
+                <div key={i} className="bg-zinc-50 p-8 rounded-[2rem] border border-zinc-100">
+                  <div className="flex text-yellow-400 mb-4">
+                    {[1,2,3,4,5].map(star => <Star key={star} size={20} fill="currentColor" />)}
+                  </div>
+                  <p className="text-zinc-700 italic mb-6">"{test.text}"</p>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600">{test.author[0]}</div>
+                    <div>
+                      <div className="font-bold text-zinc-900">{test.author}</div>
+                      <div className="text-sm text-zinc-500">{test.role}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Parents/Teachers CTA */}
+        <section className="py-24 bg-blue-600 px-6 lg:px-8 text-center overflow-hidden relative">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-400 rounded-full blur-[80px] opacity-50 mix-blend-screen"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500 rounded-full blur-[80px] opacity-50 mix-blend-screen"></div>
+          
+          <div className="max-w-3xl mx-auto relative z-10 text-white">
+            <Shield size={64} className="mx-auto mb-8 text-blue-200" />
+            <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tight">¿Eres padre o profesor?</h2>
+            <p className="text-xl text-blue-100 mb-10 leading-relaxed">
+              Descubre nuestro panel de control. Haz seguimiento del progreso, detecta áreas de mejora y asigna retos personalizados en tiempo real.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="bg-white text-blue-600 hover:bg-zinc-50" onClick={() => onNavigate('parents')}>
+                Ir al Panel de Control <ArrowRight size={20} className="ml-2" />
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="bg-white border-t border-zinc-200 pt-20 pb-10 px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+              <div className="col-span-1 md:col-span-2">
+                <div className="flex items-center gap-2 mb-6 text-zinc-900">
+                  <Gamepad2 size={28} className="text-blue-600"/> <span className="font-extrabold text-2xl tracking-tight">EduPlay</span>
+                </div>
+                <p className="text-zinc-500 text-lg max-w-sm mb-6">El portal donde la educación y la diversión convergen para crear la mejor experiencia de aprendizaje.</p>
+              </div>
+              <div>
+                <h4 className="font-bold text-zinc-900 mb-6 uppercase tracking-wider text-sm">Plataforma</h4>
+                <ul className="space-y-4 text-zinc-500 font-medium">
+                  <li><a href="#" className="hover:text-blue-600 transition-colors">Juegos</a></li>
+                  <li><a href="#" className="hover:text-blue-600 transition-colors">Padres</a></li>
+                  <li><a href="#" className="hover:text-blue-600 transition-colors">Precios</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-bold text-zinc-900 mb-6 uppercase tracking-wider text-sm">Legal</h4>
+                <ul className="space-y-4 text-zinc-500 font-medium">
+                  <li><a href="#" className="hover:text-blue-600 transition-colors">Privacidad</a></li>
+                  <li><a href="#" className="hover:text-blue-600 transition-colors">Términos</a></li>
+                  <li><a href="#" className="hover:text-blue-600 transition-colors">Contacto</a></li>
+                </ul>
+              </div>
+            </div>
+            <div className="border-t border-zinc-100 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-zinc-400 font-medium">
+              <p>© 2026 EduPlay Inc. Todos los derechos reservados.</p>
+              <div className="flex gap-4">
+                {/* Social placeholders */}
+                <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center hover:bg-blue-100 hover:text-blue-600 transition-colors cursor-pointer"><Globe size={18}/></div>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </div>
+    );
+
+    const Catalog = ({ onNavigate }) => {
+      const [filter, setFilter] = useState('Todos');
+      const subjects = ['Todos', 'Matemáticas', 'Ciencias', 'Lectura', 'Programación'];
+      const filtered = filter === 'Todos' ? MOCK_GAMES : MOCK_GAMES.filter(g => g.subject.includes(filter) || (filter==='Lectura' && g.subject==='Inglés'));
+
+      return (
+        <div className="min-h-screen pt-32 pb-20 px-6 lg:px-8 bg-zinc-50/50">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-12">
+              <h1 className="text-5xl font-black text-zinc-900 mb-4 tracking-tight">Catálogo de Juegos</h1>
+              <p className="text-xl text-zinc-600 font-medium">Encuentra tu próximo reto por materia, edad o dificultad.</p>
+            </div>
+            
+            <div className="flex overflow-x-auto gap-3 pb-4 mb-12 scrollbar-hide">
+              {subjects.map(subj => (
+                <button
+                  key={subj} onClick={() => setFilter(subj)}
+                  className={`whitespace-nowrap px-6 py-3 rounded-2xl font-bold transition-all duration-300 ${filter === subj ? 'bg-zinc-900 text-white shadow-lg shadow-zinc-900/20 scale-105' : 'bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300'}`}
+                >{subj}</button>
+              ))}
+            </div>
+            
+            <motion.div layout className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              <AnimatePresence mode="popLayout">
+                {filtered.map((game) => (
+                  <motion.div key={game.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3 }}>
+                    <PremiumGameCard {...game} onClick={() => onNavigate('game', { gameId: game.id })} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          </div>
+        </div>
+      );
+    };
+
+    const Dashboard = ({ onNavigate }) => {
+      const progressPct = (MOCK_USER.xp / MOCK_USER.nextLevelXp) * 100;
+      return (
+        <div className="min-h-screen pt-32 pb-20 px-6 lg:px-8 bg-zinc-50/50">
+          <div className="max-w-7xl mx-auto space-y-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 bg-white p-10 rounded-[2rem] border border-zinc-100 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-500/10 to-cyan-500/10 rounded-full blur-3xl -z-0"></div>
+              
+              <div className="flex items-center gap-8 relative z-10">
+                <div className="relative group">
+                  <img src={MOCK_USER.avatar} alt="Avatar" className="w-28 h-28 rounded-full bg-orange-100 border-4 border-white shadow-xl group-hover:scale-105 transition-transform" />
+                  <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold px-4 py-1.5 rounded-full border-2 border-white shadow-lg">Lvl {MOCK_USER.level}</div>
+                </div>
+                <div>
+                  <h1 className="text-4xl font-black text-zinc-900 mb-2">¡Hola, {MOCK_USER.name}!</h1>
+                  <p className="text-zinc-500 font-medium text-lg">Estás a <strong className="text-zinc-900">{MOCK_USER.nextLevelXp - MOCK_USER.xp} XP</strong> del nivel {MOCK_USER.level + 1}</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4 relative z-10">
+                <div className="bg-white px-8 py-6 rounded-[1.5rem] border border-zinc-100 shadow-sm flex flex-col items-center min-w-[140px] hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mb-3">
+                    <Zap className="text-yellow-500" size={24}/>
+                  </div>
+                  <span className="text-3xl font-black text-zinc-900 mb-1">{MOCK_USER.streak}</span>
+                  <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Días seguidos</span>
+                </div>
+                <div className="bg-white px-8 py-6 rounded-[1.5rem] border border-zinc-100 shadow-sm flex flex-col items-center min-w-[140px] hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
+                    <Star className="text-blue-500" size={24}/>
+                  </div>
+                  <span className="text-3xl font-black text-zinc-900 mb-1">{MOCK_USER.xp}</span>
+                  <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider">XP Total</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-8">
+                <div className="bg-white p-10 rounded-[2rem] border border-zinc-100 shadow-sm">
+                  <h3 className="text-2xl font-bold text-zinc-900 mb-8">Progreso de Nivel</h3>
+                  <div className="relative h-8 bg-zinc-100 rounded-full overflow-hidden mb-4 shadow-inner">
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${progressPct}%` }} transition={{ duration: 1.5, ease: "easeOut" }} className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full relative overflow-hidden">
+                      <div className="absolute inset-0 w-full h-full bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px] animate-[shimmer_1s_linear_infinite]" />
+                    </motion.div>
+                  </div>
+                  <div className="flex justify-between text-base font-bold text-zinc-500">
+                    <span>Lvl {MOCK_USER.level} <span className="text-zinc-400 font-medium">({MOCK_USER.xp} XP)</span></span>
+                    <span>Lvl {MOCK_USER.level + 1} <span className="text-zinc-400 font-medium">({MOCK_USER.nextLevelXp} XP)</span></span>
+                  </div>
+                </div>
+                
+                <div className="bg-white p-10 rounded-[2rem] border border-zinc-100 shadow-sm">
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="text-2xl font-bold text-zinc-900">Retos Diarios</h3>
+                    <Badge className="bg-blue-50 text-blue-600 text-sm px-4 py-1.5">2/3 Completados</Badge>
+                  </div>
+                  <div className="space-y-4">
+                    {[
+                      { title: "Juega 2 partidas de Matemáticas", xp: 50, done: true },
+                      { title: "Mantén tu racha de días", xp: 20, done: true },
+                      { title: "Obtén 100% en Ciencias", xp: 100, done: false }
+                    ].map((task, i) => (
+                      <div key={i} className={`flex items-center justify-between p-6 rounded-2xl border transition-colors ${task.done ? 'bg-zinc-50/50 border-zinc-200' : 'bg-white border-zinc-200 shadow-sm hover:border-blue-300'}`}>
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${task.done ? 'bg-green-100 text-green-600' : 'bg-zinc-100 text-zinc-400'}`}>
+                            {task.done ? <CheckCircle2 size={20} /> : <div className="w-3 h-3 rounded-full bg-zinc-300"/>}
+                          </div>
+                          <span className={`font-bold text-lg ${task.done ? 'text-zinc-400 line-through' : 'text-zinc-900'}`}>{task.title}</span>
+                        </div>
+                        <span className="font-black text-yellow-500 flex items-center gap-1.5"><Star size={18} fill="currentColor"/> {task.xp}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-8">
+                <div className="bg-white p-10 rounded-[2rem] border border-zinc-100 shadow-sm">
+                  <h3 className="text-2xl font-bold text-zinc-900 mb-8">Tus Insignias</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {MOCK_USER.badges.map(b => (
+                      <div key={b.id} className={`flex flex-col items-center text-center p-6 rounded-2xl ${b.bg} border border-white/50 shadow-sm hover:-translate-y-1 transition-transform cursor-pointer`}>
+                        <div className={`w-14 h-14 rounded-full bg-white flex items-center justify-center mb-4 shadow-sm ${b.color}`}>
+                          <b.icon size={28} />
+                        </div>
+                        <span className="text-sm font-bold text-zinc-900 leading-tight">{b.name}</span>
+                      </div>
+                    ))}
+                    <div className="flex flex-col items-center justify-center text-center p-6 rounded-2xl border-2 border-dashed border-zinc-200 text-zinc-400">
+                      <div className="w-14 h-14 rounded-full bg-zinc-50 flex items-center justify-center mb-4"><Trophy size={24} /></div>
+                      <span className="text-sm font-bold">Bloqueado</span>
+                    </div>
+                  </div>
+                </div>
+                <Button variant="primary" className="w-full py-6 text-xl shadow-xl shadow-blue-500/30 rounded-[1.5rem]" onClick={() => onNavigate('catalog')}>
+                  ¡Seguir Jugando!
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const QuizGame = ({ onNavigate }) => {
+      const [currentQ, setCurrentQ] = useState(0);
+      const [selected, setSelected] = useState(null);
+      const [status, setStatus] = useState('idle');
+      const [score, setScore] = useState(0);
+
+      const q = MOCK_QUIZ.questions[currentQ];
+
+      const handleSelect = (idx) => {
+        if (status !== 'idle') return;
+        setSelected(idx);
+        if (idx === q.correct) {
+          setStatus('correct');
+          setScore(s => s + 50);
+        } else {
+          setStatus('incorrect');
+        }
+      };
+
+      const handleNext = () => {
+        if (currentQ < MOCK_QUIZ.questions.length - 1) {
+          setCurrentQ(c => c + 1);
+          setSelected(null);
+          setStatus('idle');
+        } else setStatus('finished');
+      };
+
+      if (status === 'finished') {
+        return (
+          <div className="min-h-screen flex items-center justify-center px-6 pt-20 pb-10 bg-zinc-50">
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: "spring", damping: 20 }} className="max-w-lg w-full mx-auto p-12 bg-white rounded-[3rem] border border-zinc-100 shadow-2xl text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 to-transparent h-1/2 pointer-events-none" />
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1, rotate: [0, 10, -10, 0] }} transition={{ delay: 0.2, type: "spring" }} className="w-32 h-32 bg-gradient-to-tr from-yellow-400 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg shadow-yellow-500/30 text-white">
+                <Trophy size={64} />
+              </motion.div>
+              <h2 className="text-4xl font-black text-zinc-900 mb-3 tracking-tight">¡Misión Cumplida!</h2>
+              <p className="text-xl text-zinc-500 font-medium mb-10">Has completado el reto matemático con éxito.</p>
+              
+              <div className="bg-zinc-50 rounded-[2rem] p-8 mb-10 border border-zinc-100 shadow-sm">
+                <div className="text-zinc-500 font-bold uppercase tracking-wider text-sm mb-2">Recompensa Obtenida</div>
+                <div className="text-5xl font-black text-yellow-500 flex items-center justify-center gap-3">
+                  <Star fill="currentColor" size={40}/> +{score} XP
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-4">
+                <Button variant="primary" onClick={() => onNavigate('dashboard')} className="w-full py-5 text-xl rounded-2xl">Ir a mi Dashboard</Button>
+                <Button variant="secondary" onClick={() => onNavigate('catalog')} className="w-full py-4 text-lg rounded-2xl">Jugar otro reto</Button>
+              </div>
+            </motion.div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen flex flex-col items-center pt-32 pb-20 px-6 bg-zinc-50">
+          <div className="w-full max-w-3xl">
+            <div className="flex items-center justify-between mb-10">
+              <Button variant="ghost" size="sm" onClick={() => onNavigate('catalog')} className="-ml-4 text-zinc-500 hover:text-zinc-900">&larr; Volver al catálogo</Button>
+              <div className="font-bold text-zinc-500 bg-white px-5 py-2 rounded-full border border-zinc-200 shadow-sm text-sm">
+                Pregunta {currentQ + 1} de {MOCK_QUIZ.questions.length}
+              </div>
+              <div className="font-black text-yellow-500 bg-white border border-zinc-200 px-5 py-2 rounded-full shadow-sm flex items-center gap-2 text-lg">
+                <Star size={20} fill="currentColor"/> {score}
+              </div>
+            </div>
+            
+            <div className="h-4 bg-zinc-200 rounded-full mb-16 overflow-hidden shadow-inner p-1">
+              <motion.div className="h-full bg-blue-500 rounded-full" initial={{ width: `${(currentQ / MOCK_QUIZ.questions.length) * 100}%` }} animate={{ width: `${((currentQ + (status!=='idle'?1:0)) / MOCK_QUIZ.questions.length) * 100}%` }} transition={{ duration: 0.5, ease: "easeOut" }} />
+            </div>
+            
+            <AnimatePresence mode="wait">
+              <motion.div key={currentQ} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }} className="bg-white p-10 md:p-14 rounded-[3rem] shadow-xl shadow-zinc-200/50 border border-zinc-100">
+                <h2 className="text-3xl md:text-4xl font-black text-zinc-900 mb-12 text-center leading-tight">{q.question}</h2>
+                <div className="grid sm:grid-cols-2 gap-6">
+                  {q.options.map((opt, i) => {
+                    const isSelected = selected === i;
+                    const isCorrect = i === q.correct;
+                    let btnClass = "bg-white border-2 border-zinc-200 text-zinc-700 hover:border-blue-400 hover:bg-blue-50";
+                    if (status !== 'idle') {
+                      if (isCorrect) btnClass = "bg-green-50 border-2 border-green-500 text-green-700 shadow-md";
+                      else if (isSelected) btnClass = "bg-red-50 border-2 border-red-500 text-red-700 shadow-md";
+                      else btnClass = "bg-zinc-50 border-2 border-zinc-200 text-zinc-400 opacity-50";
+                    }
+                    return (
+                      <button key={i} onClick={() => handleSelect(i)} disabled={status !== 'idle'} className={`relative p-8 rounded-[2rem] font-bold text-2xl transition-all duration-300 transform active:scale-95 ${btnClass}`}>
+                        {opt}
+                        {status !== 'idle' && isCorrect && <motion.div initial={{scale:0}} animate={{scale:1}} className="absolute -top-4 -right-4 bg-white rounded-full text-green-500 shadow-lg"><CheckCircle2 size={36} fill="currentColor" className="text-white bg-green-500 rounded-full"/></motion.div>}
+                        {status !== 'idle' && isSelected && !isCorrect && <motion.div initial={{scale:0}} animate={{scale:1}} className="absolute -top-4 -right-4 bg-white rounded-full text-red-500 shadow-lg"><XCircle size={36} fill="currentColor" className="text-white bg-red-500 rounded-full"/></motion.div>}
+                      </button>
+                    )
+                  })}
+                </div>
+                <AnimatePresence>
+                  {status !== 'idle' && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-12 flex justify-center">
+                      <Button variant={status === 'correct' ? 'primary' : 'secondary'} size="lg" onClick={handleNext} className={`w-full sm:w-auto px-16 py-5 text-xl rounded-2xl ${status==='correct' ? 'bg-green-500 hover:bg-green-600 shadow-[0_8px_30px_rgb(34,197,94,0.3)]' : ''}`}>
+                        {status === 'correct' ? '¡Excelente! Continuar' : 'Siguiente pregunta'} <ArrowRight className="ml-2"/>
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+      );
+    };
+
+    const ParentsPanel = ({ onNavigate }) => {
+      const students = [
+        { name: "Leo", grade: "3º Básico", xp: 4500, time: "12h 30m", alert: false },
+        { name: "Mia", grade: "1º Básico", xp: 2100, time: "8h 15m", alert: true }
+      ];
+      return (
+        <div className="min-h-screen pt-32 px-6 lg:px-8 bg-zinc-50 pb-20">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-4xl font-black text-zinc-900 mb-10 flex items-center gap-4"><Users className="text-blue-500" size={40}/> Panel para Padres y Profesores</h2>
+            <div className="grid md:grid-cols-3 gap-8 mb-12">
+              <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-100 flex flex-col items-center justify-center text-center">
+                <span className="text-zinc-500 font-bold uppercase tracking-wider text-sm mb-3">Tiempo de Aprendizaje</span>
+                <span className="text-5xl font-black text-zinc-900">20<span className="text-2xl text-zinc-400">h</span> 45<span className="text-2xl text-zinc-400">m</span></span>
+                <span className="text-green-500 font-bold mt-3 flex items-center gap-1 bg-green-50 px-3 py-1 rounded-full"><ArrowRight size={16} className="-rotate-45"/> +15% vs mes anterior</span>
+              </div>
+              <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-100 flex flex-col items-center justify-center text-center">
+                <span className="text-zinc-500 font-bold uppercase tracking-wider text-sm mb-3">Materias Fuertes</span>
+                <span className="text-3xl font-black text-zinc-900 flex items-center gap-3"><Zap className="text-yellow-500" size={32}/> Matemáticas</span>
+              </div>
+              <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-zinc-100 flex flex-col items-center justify-center text-center">
+                <span className="text-zinc-500 font-bold uppercase tracking-wider text-sm mb-3">Área a Reforzar</span>
+                <span className="text-3xl font-black text-zinc-900 flex items-center gap-3"><BookOpen className="text-blue-500" size={32}/> Lectura</span>
+              </div>
+            </div>
+            
+            <h3 className="text-2xl font-bold text-zinc-900 mb-6">Progreso de Estudiantes</h3>
+            <div className="bg-white rounded-[2rem] shadow-sm border border-zinc-100 overflow-hidden">
+              <div className="divide-y divide-zinc-100">
+                {students.map((student, i) => (
+                  <div key={i} className="p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:bg-zinc-50/50 transition-colors">
+                    <div className="flex items-center gap-6">
+                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-black text-2xl">{student.name[0]}</div>
+                      <div>
+                        <div className="font-black text-2xl text-zinc-900 flex items-center gap-3">
+                          {student.name} {student.alert && <span className="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full uppercase tracking-wider">Atención requerida</span>}
+                        </div>
+                        <div className="text-zinc-500 font-medium">{student.grade}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-10">
+                      <div className="text-center"><div className="font-black text-2xl text-zinc-900">{student.xp}</div><div className="text-sm font-bold text-zinc-400 uppercase">XP</div></div>
+                      <div className="text-center"><div className="font-black text-2xl text-zinc-900">{student.time}</div><div className="text-sm font-bold text-zinc-400 uppercase">Tiempo</div></div>
+                      <Button variant="secondary">Ver Detalle</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const ProfilePanel = ({ onNavigate }) => {
+      return (
+        <div className="min-h-screen pt-32 px-6 lg:px-8 bg-zinc-50 pb-20">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-zinc-100 flex flex-col md:flex-row items-center gap-10 mb-12 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-blue-500/10 to-purple-500/10 rounded-full blur-[80px] -z-0 pointer-events-none"></div>
+              <div className="relative z-10 w-40 h-40 bg-orange-100 rounded-[2.5rem] border-[6px] border-white shadow-xl overflow-hidden flex-shrink-0 rotate-3">
+                <img src={MOCK_USER.avatar} alt="Avatar" className="w-full h-full object-cover" />
+              </div>
+              <div className="relative z-10 flex-grow text-center md:text-left">
+                <h2 className="text-5xl font-black text-zinc-900 mb-4 tracking-tight">{MOCK_USER.name}</h2>
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-6">
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-100 text-yellow-700 font-bold text-sm border border-yellow-200"><Trophy size={18}/> Nivel {MOCK_USER.level}</span>
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 font-bold text-sm border border-blue-200"><Star size={18}/> {MOCK_USER.xp} XP</span>
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-100 text-orange-700 font-bold text-sm border border-orange-200"><Zap size={18}/> Racha {MOCK_USER.streak} días</span>
+                </div>
+                <div className="w-full bg-zinc-100 rounded-full h-3 mb-3 shadow-inner">
+                  <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-3 rounded-full" style={{width: `${(MOCK_USER.xp / MOCK_USER.nextLevelXp) * 100}%`}}></div>
+                </div>
+                <p className="text-sm font-bold text-zinc-400 text-right uppercase tracking-wider">{MOCK_USER.nextLevelXp - MOCK_USER.xp} XP para subir de nivel</p>
+              </div>
+              <div className="relative z-10">
+                <Button className="rounded-2xl">Editar Perfil</Button>
+              </div>
+            </div>
+            
+            <h3 className="text-2xl font-bold text-zinc-900 mb-6 flex items-center gap-3"><Award className="text-purple-500" size={28}/> Insignias Desbloqueadas</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+              {MOCK_USER.badges.map(b => (
+                <motion.div key={b.id} whileHover={{y:-8, scale: 1.02}} className={`${b.bg} p-8 rounded-[2rem] flex flex-col items-center justify-center text-center cursor-pointer border border-white/50 shadow-sm hover:shadow-lg transition-all`}>
+                  <b.icon size={40} className={`${b.color} mb-4`} />
+                  <span className={`font-bold text-base ${b.color}`}>{b.name}</span>
+                </motion.div>
+              ))}
+              <div className="bg-zinc-100 p-8 rounded-[2rem] flex flex-col items-center justify-center text-center border-2 border-zinc-200 border-dashed opacity-60">
+                <Compass size={40} className="text-zinc-400 mb-4" />
+                <span className="font-bold text-base text-zinc-500">Bloqueado</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const Navbar = ({ currentView, onNavigate }) => {
+      const [scrolled, setScrolled] = useState(false);
+      
+      useEffect(() => {
+        const handleScroll = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+      }, []);
+
+      const navs = [
+        { id: 'landing', label: 'Inicio' },
+        { id: 'catalog', label: 'Juegos' },
+        { id: 'dashboard', label: 'Mi Progreso' }
+      ];
+
+      return (
+        <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'py-3' : 'py-5'}`}>
+          <div className="px-4 sm:px-6 lg:px-8">
+            <div className={`max-w-7xl mx-auto flex justify-between items-center transition-all duration-500 rounded-full px-6 ${scrolled ? 'bg-white/80 backdrop-blur-xl border border-zinc-200/50 shadow-lg py-3' : 'bg-transparent py-2'}`}>
+              <div className="flex items-center gap-3 cursor-pointer group" onClick={() => onNavigate('landing')}>
+                <div className="w-12 h-12 bg-gradient-to-tr from-blue-600 to-cyan-500 rounded-[14px] flex items-center justify-center text-white shadow-lg shadow-blue-500/30 group-hover:scale-105 group-hover:rotate-3 transition-transform"><Gamepad2 size={24} /></div>
+                <span className="font-black text-2xl tracking-tight text-zinc-900 hidden sm:block">EduPlay</span>
+              </div>
+              
+              <div className="hidden md:flex items-center gap-2">
+                {navs.map(nav => (
+                  <button key={nav.id} onClick={() => onNavigate(nav.id)} className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all ${currentView === nav.id ? 'bg-zinc-900 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80'}`}>
+                    {nav.label}
+                  </button>
+                ))}
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="hidden lg:flex items-center gap-2">
+                  <button className="text-sm font-bold text-zinc-500 hover:text-zinc-900 transition-colors px-3 py-2 rounded-lg" onClick={() => onNavigate('parents')}>Padres</button>
+                  <button className="text-sm font-bold text-zinc-500 hover:text-zinc-900 transition-colors px-3 py-2 rounded-lg" onClick={() => onNavigate('profile')}>Perfil</button>
+                </div>
+                <Button size="md" className="rounded-full shadow-lg shadow-blue-500/20 px-8" onClick={() => onNavigate('catalog')}>Jugar Ahora</Button>
+              </div>
+            </div>
+          </div>
+        </nav>
+      );
+    }
+
+    const App = () => {
+      const [view, setView] = useState('landing');
+      const [params, setParams] = useState({});
+
+      const navigate = (newView, newParams = {}) => {
+        setParams(newParams);
+        setView(newView);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      const views = {
+        landing: <Landing onNavigate={navigate} />,
+        catalog: <Catalog onNavigate={navigate} />,
+        dashboard: <Dashboard onNavigate={navigate} />,
+        game: <QuizGame onNavigate={navigate} gameId={params.gameId} />,
+        parents: <ParentsPanel onNavigate={navigate} />,
+        profile: <ProfilePanel onNavigate={navigate} />
+      };
+
+      return (
+        <div className="w-full min-h-screen relative font-sans text-zinc-900 selection:bg-blue-200">
+          <Navbar currentView={view} onNavigate={navigate} />
+          <AnimatePresence mode="wait">
+            <motion.div key={view} initial={{ opacity: 0, filter: 'blur(10px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} exit={{ opacity: 0, filter: 'blur(10px)' }} transition={{ duration: 0.4 }}>
+              {views[view]}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

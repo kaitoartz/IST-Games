@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "IST Educa · Premium White",
+  "entry": "ist-games-white-3.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "primary": true,
+  "createdAt": "2026-06-06T06:04:52.055Z",
+  "updatedAt": "2026-06-06T06:04:52.061Z",
+  "sourceSkillId": "agent-browser",
+  "metadata": {
+    "identifier": "ist-games-white",
+    "artifactType": "text/html",
+    "inferred": false
+  }
+}

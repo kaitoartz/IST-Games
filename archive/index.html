@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portal de Juegos Educativos · IST Games</title>
+  <meta name="description" content="Plataforma de simuladores interactivos para capacitación técnica, prevención de riesgos y educación profesional." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- VictorWelander Gooey Filter for Text Morphing -->
+  <svg style="width: 0; height: 0; position: absolute;" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="gooey-text">
+        <feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 255 -140" />
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- Mobile Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="brand-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><rect width="20" height="12" x="2" y="6" rx="3"/></svg>
+        <span>IST Games</span>
+      </div>
+      <button class="hextaui-icon-btn" id="collapseBtn" style="border: none; background: none; width: 28px; height: 28px;" title="Colapsar menú">
+        <i data-lucide="chevron-left"></i>
+      </button>
+    </div>
+
+    <nav class="sidebar-menu">
+      <div class="menu-item active" onclick="selectCategory('todos', this)">
+        <i data-lucide="layout-grid"></i>
+        <span>Todos los juegos</span>
+        <span class="menu-item-count" id="count-todos">8</span>
+      </div>
+      <div class="menu-item" onclick="selectCategory('maquinaria', this)">
+        <i data-lucide="wrench"></i>
+        <span>Maquinaria</span>
+        <span class="menu-item-count" id="count-maquinaria">2</span>
+      </div>
+      <div class="menu-item" onclick="selectCategory('transporte', this)">
+        <i data-lucide="truck"></i>
+        <span>Transporte</span>
+        <span class="menu-item-count" id="count-transporte">1</span>
+      </div>
+      <div class="menu-item" onclick="selectCategory('construccion', this)">
+        <i data-lucide="building-2"></i>
+        <span>Construcción</span>
+        <span class="menu-item-count" id="count-construccion">1</span>
+      </div>
+      <div class="menu-item" onclick="selectCategory('salud', this)">
+        <i data-lucide="heart-pulse"></i>
+        <span>Salud</span>
+        <span class="menu-item-count" id="count-salud">3</span>
+      </div>
+      <div class="menu-item" onclick="selectCategory('oficina', this)">
+        <i data-lucide="briefcase"></i>
+        <span>Oficina</span>
+        <span class="menu-item-count" id="count-oficina">1</span>
+      </div>
+      <div class="menu-item" onclick="selectCategory('seguridad', this)">
+        <i data-lucide="shield-alert"></i>
+        <span>Seguridad</span>
+        <span class="menu-item-count" id="count-seguridad">1</span>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span style="font-size: 11px; font-weight: 600; color: var(--muted);">IST Educa v2.5.0</span>
+      <span style="font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 6px;">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: oklch(72% 0.19 150); display: inline-block;"></span>
+        Conectividad Estable
+      </span>
+    </div>
+  </aside>
+
+  <!-- Main Viewport -->
+  <div class="main-viewport">
+    <!-- Content Area -->
+    <main class="content-area">
+
+      <!-- Hero Header with Text Morphing -->
+      <section class="hero-header">
+        <p class="hero-eyebrow">
+          <!-- PaceUI Dot Loader -->
+          <span class="paceui-loader">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </span>
+          Simuladores Interactivos
+        </p>
+        <h1 class="hero-title">
+          Portal de
+          <!-- VictorWelander Gooey Text Morphing -->
+          <span class="morph-container" id="morphContainer">
+            <span class="morph-word active">Capacitación</span>
+            <span class="morph-word below">Prevención</span>
+            <span class="morph-word below">Simulación</span>
+            <span class="morph-word below">Educación</span>
+          </span>
+          <br>Interactiva
+        </h1>
+        <p class="hero-desc">Entrena competencias técnicas, prevención de riesgos y respuesta ante emergencias en entornos interactivos 3D y simuladores visuales de alta fidelidad.</p>
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+          <div class="stat-pill">
+            <i data-lucide="gamepad-2"></i>
+            <div>
+              <div class="stat-value">8</div>
+              <span>Simulaciones</span>
+            </div>
+          </div>
+          <div class="stat-pill">
+            <i data-lucide="layers"></i>
+            <div>
+              <div class="stat-value">6</div>
+              <span>Categorías</span>
+            </div>
+          </div>
+          <div class="stat-pill">
+            <i data-lucide="clock"></i>
+            <div>
+              <div class="stat-value">75+</div>
+              <span>Min. contenido</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Games Grid Section -->
+      <section class="grid-section">
+        <div class="grid-header">
+          <h2 class="grid-title" id="gridCategoryTitle">Todos los juegos</h2>
+          <span class="grid-stats">Mostrando <span id="visibleCount">8</span> de <span id="totalCount">8</span></span>
+        </div>
+
+        <!-- Categories Tab Bar (iOS Minimalist Style) -->
+        <div class="category-tabs-wrapper">
+          <div class="tab-container">
+            <input type="radio" name="category-tab" id="tab-todos" class="tab tab--1" checked onclick="selectCategoryTab('todos')" />
+            <label for="tab-todos" class="tab_label">Todos</label>
+
+            <input type="radio" name="category-tab" id="tab-maquinaria" class="tab tab--2" onclick="selectCategoryTab('maquinaria')" />
+            <label for="tab-maquinaria" class="tab_label">Maquinaria</label>
+
+            <input type="radio" name="category-tab" id="tab-transporte" class="tab tab--3" onclick="selectCategoryTab('transporte')" />
+            <label for="tab-transporte" class="tab_label">Transporte</label>
+
+            <input type="radio" name="category-tab" id="tab-construccion" class="tab tab--4" onclick="selectCategoryTab('construccion')" />
+            <label for="tab-construccion" class="tab_label">Construcción</label>
+
+            <input type="radio" name="category-tab" id="tab-salud" class="tab tab--5" onclick="selectCategoryTab('salud')" />
+            <label for="tab-salud" class="tab_label">Salud</label>
+
+            <input type="radio" name="category-tab" id="tab-oficina" class="tab tab--6" onclick="selectCategoryTab('oficina')" />
+            <label for="tab-oficina" class="tab_label">Oficina</label>
+
+            <input type="radio" name="category-tab" id="tab-seguridad" class="tab tab--7" onclick="selectCategoryTab('seguridad')" />
+            <label for="tab-seguridad" class="tab_label">Seguridad</label>
+
+            <div class="indicator"></div>
+          </div>
+        </div>
+
+        <!-- Aceternity Container Scroll Animation Wrapper -->
+        <div class="scroll-container-wrapper" id="scrollContainerWrapper">
+          <div class="games-grid" id="gamesGrid">
+
+          <!-- Game 1: Laberinto Portuario (Featured) -->
+          <article class="game-card featured" data-tags="maquinaria" data-game-url="https://puerto-istgames.netlify.app/">
+            <div class="card-glow"></div>
+            <!-- Shugar Award Badge -->
+            <div class="shugar-badge">
+              <i data-lucide="sparkles"></i> Destacado
+            </div>
+            <div class="card-media">
+              <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExOWJlNTdzbGw3Mjg4c2p6M3V0ZnJjcGtvZzk3ZTdvaDR6enY5eHQ1ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/vEHJ3rEPheP5JjpktJ/giphy_s.gif"
+                   data-animated="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExOWJlNTdzbGw3Mjg4c2p6M3V0ZnJjcGtvZzk3ZTdvaDR6enY5eHQ1ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/vEHJ3rEPheP5JjpktJ/giphy.gif"
+                   alt="Laberinto Portuario" class="card-thumb" loading="lazy" />
+              <div class="media-overlay">
+                <div class="btn-play-circle"><i data-lucide="external-link"></i></div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="card-meta-row">
+                <span class="badge-tag"><i data-lucide="award"></i> Maquinaria</span>
+                <span class="badge-tag badge-time"><i data-lucide="clock"></i> 5 min</span>
+              </div>
+              <h3 class="card-title">🚢 Laberinto Portuario</h3>
+              <p class="card-desc">Navegación e identificación de riesgos de maquinaria pesada dentro de patios portuarios.</p>
+              <div class="card-footer">
+                <span class="link-play">Iniciar simulación <i data-lucide="arrow-right"></i></span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Game 2: Simulación Médica -->
+          <article class="game-card" data-tags="oficina,salud" data-game-url="https://simulacionchat-istgames.netlify.app/">
+            <div class="card-glow"></div>
+            <div class="card-media">
+              <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnBub3J5MTV1dTA2c3kzeHJ6azIwYXdoaXRlMjNjZmdpMnpiaGU3diZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/71fMwwGrFRszyoHhUy/giphy_s.gif"
+                   data-animated="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnBub3J5MTV1dTA2c3kzeHJ6azIwYXdoaXRlMjNjZmdpMnpiaGU3diZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/71fMwwGrFRszyoHhUy/giphy.gif"
+                   alt="Simulación Médica" class="card-thumb" loading="lazy" />
+              <div class="media-overlay">
+                <div class="btn-play-circle"><i data-lucide="external-link"></i></div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="card-meta-row">
+                <span class="badge-tag"><i data-lucide="award"></i> Oficina</span>
+                <span class="badge-tag badge-time"><i data-lucide="clock"></i> 10 min</span>
+              </div>
+              <h3 class="card-title">📱 Simulación Médica</h3>
+              <p class="card-desc">Chat simulado interactivo para el aprendizaje del protocolo de prestaciones y atención médica.</p>
+              <div class="card-footer">
+                <span class="link-play">Iniciar simulación <i data-lucide="arrow-right"></i></span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Game 3: 360 VR Alimentación -->
+          <article class="game-card" data-tags="maquinaria" data-game-url="https://tour.panoee.net/preview?tour=696e8b96cb1262ed5e775a57&scene=696e8bab53181e56c2e9e74f">
+            <div class="card-glow"></div>
+            <div class="card-media">
+              <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2Q5MnNrY3Vxc3VkNGk3NXA5M21ubHhvbjJuazJ3enFqdHpuamNwcyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/f0Dy5NDc1jBzpcbff9/giphy_s.gif"
+                   data-animated="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2Q5MnNrY3Vxc3VkNGk3NXA5M21ubHhvbjJuazJ3enFqdHpuamNwcyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/f0Dy5NDc1jBzpcbff9/giphy.gif"
+                   alt="VR Alimentación" class="card-thumb" loading="lazy" />
+              <div class="media-overlay">
+                <div class="btn-play-circle"><i data-lucide="external-link"></i></div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="card-meta-row">
+                <span class="badge-tag"><i data-lucide="award"></i> Maquinaria</span>
+                <span class="badge-tag badge-time"><i data-lucide="clock"></i> 7 min</span>
+              </div>
+              <h3 class="card-title">🏗️ 360 VR Alimentación</h3>
+              <p class="card-desc">Exploración inmersiva en 360° para la identificación de peligros en plantas de procesos alimentarios.</p>
+              <div class="card-footer">
+                <span class="link-play">Iniciar simulación <i data-lucide="arrow-right"></i></span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Game 4: Señaleticas -->
+          <article class="game-card" data-tags="transporte" data-game-url="https://caminata-istgames.netlify.app">
+            <div class="card-glow"></div>
+            <div class="card-media">
+              <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExamdvNDV2b3J1Y3Q2OHNpd3A1MWV3NnVtbW14d2tveTllOTkyb2gyZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/e9BAkE9fnOEHgddk15/giphy_s.gif"
+                   data-animated="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExamdvNDV2b3J1Y3Q2OHNpd3A1MWV3NnVtbW14d2tveTllOTkyb2gyZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/e9BAkE9fnOEHgddk15/giphy.gif"
+                   alt="Señaleticas" class="card-thumb" loading="lazy" />
+              <div class="media-overlay">
+                <div class="btn-play-circle"><i data-lucide="external-link"></i></div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="card-meta-row">
+                <span class="badge-tag"><i data-lucide="award"></i> Transporte</span>
+                <span class="badge-tag badge-time"><i data-lucide="clock"></i> 15 min</span>
+              </div>
+              <h3 class="card-title">🚶‍♂️ Señaleticas de Seguridad</h3>
+              <p class="card-desc">Caminata vial interactiva para buscar y validar señaleticas y conductas peatonales correctas.</p>
+              <div class="card-footer">
+                <span class="link-play">Iniciar simulación <i data-lucide="arrow-right"></i></span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Game 5: VR Construcción (Featured) -->
+          <article class="game-card featured" data-tags="construccion,salud" data-game-url="VR360/vr.html" data-vimeo-id="1157461293" data-vimeo-hash="bacf48c011">
+            <div class="card-glow"></div>
+            <!-- Shugar Award Badge -->
+            <div class="shugar-badge">
+              <i data-lucide="sparkles"></i> Destacado
+            </div>
+            <div class="card-media">
+              <img src="https://i.vimeocdn.com/video/2111149424-80e3b2974f1fd674f85bde22bcccedd7b2f0d26312df70e42dd7273e55360976-d_640.jpg"
+                   alt="VR Construcción" class="card-thumb" loading="lazy" />
+              <div class="card-iframe-container" id="vimeo-container-1157461293"></div>
+              <div class="media-overlay">
+                <div class="btn-play-circle"><i data-lucide="external-link"></i></div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="card-meta-row">
+                <span class="badge-tag"><i data-lucide="award"></i> Construcción</span>
+                <span class="badge-tag badge-time"><i data-lucide="clock"></i> 5 min</span>
+              </div>
+              <h3 class="card-title">🥽 VR Construcción</h3>
+              <p class="card-desc">Simulación interactiva de obra de construcción y protocolos clave en trabajos de altura física.</p>
+              <div class="card-footer">
+                <span class="link-play">Iniciar simulación <i data-lucide="arrow-right"></i></span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Game 6: Rayos X -->
+          <article class="game-card" data-tags="salud" data-game-url="rayosx/rayosx.html">
+            <div class="card-glow"></div>
+            <div class="card-media">
+              <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExMDlvZ2dleXJ5YXl6bWI2OWNsbDJvNzRuNTh3ZHFrc3BmNnY2d2xrMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/qX9oszuvxWoMwmVl8x/giphy_s.gif"
+                   data-animated="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExMDlvZ2dleXJ5YXl6bWI2OWNsbDJvNzRuNTh3ZHFrc3BmNnY2d2xrMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/qX9oszuvxWoMwmVl8x/giphy.gif"
+                   alt="Rayos X" class="card-thumb" loading="lazy" />
+              <div class="media-overlay">
+                <div class="btn-play-circle"><i data-lucide="external-link"></i></div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="card-meta-row">
+                <span class="badge-tag"><i data-lucide="award"></i> Salud</span>
+                <span class="badge-tag badge-time"><i data-lucide="clock"></i> 8 min</span>
+              </div>
+              <h3 class="card-title">☢️ Rayos X Ergonómicos</h3>
+              <p class="card-desc">Utilización de escáner virtual de rayos X para verificar posturas ergonómicas corporales críticas.</p>
+              <div class="card-footer">
+                <span class="link-play">Iniciar simulación <i data-lucide="arrow-right"></i></span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Game 7: Prevención de Incendios -->
+          <article class="game-card" data-tags="seguridad" data-game-url="https://incendio-istgames.netlify.app/">
+            <div class="card-glow"></div>
+            <div class="card-media">
+              <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcnJ4cnFqczJwcjE4cmd4YnUwbTlmNjc5dDQ0cWxiMHNzcjhmZGVoMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2xD3RrcxB20kTDuWeY/giphy_s.gif"
+                   data-animated="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcnJ4cnFqczJwcjE4cmd4YnUwbTlmNjc5dDQ0cWxiMHNzcjhmZGVoMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2xD3RrcxB20kTDuWeY/giphy.gif"
+                   alt="Prevención Incendios" class="card-thumb" loading="lazy" />
+              <div class="media-overlay">
+                <div class="btn-play-circle"><i data-lucide="external-link"></i></div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="card-meta-row">
+                <span class="badge-tag"><i data-lucide="award"></i> Seguridad</span>
+                <span class="badge-tag badge-time"><i data-lucide="clock"></i> 10 min</span>
+              </div>
+              <h3 class="card-title">🧯 Control de Amagos de Fuego</h3>
+              <p class="card-desc">Simulador educativo sobre clases de incendios y selección de extintores portátiles reglamentarios.</p>
+              <div class="card-footer">
+                <span class="link-play">Iniciar simulación <i data-lucide="arrow-right"></i></span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Game 8: Bolso de Emergencia -->
+          <article class="game-card" data-tags="salud" data-game-url="https://grd-istgames.netlify.app/">
+            <div class="card-glow"></div>
+            <div class="card-media">
+              <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExemgwZmJsNm5qc29qZnBrYnpiYWM0YXBoazc4YjhtejYwczI4bm82MyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/MbQPlY8F3nTuXldD4z/giphy_s.gif"
+                   data-animated="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExemgwZmJsNm5qc29qZnBrYnpiYWM0YXBoazc4YjhtejYwczI4bm82MyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/MbQPlY8F3nTuXldD4z/giphy.gif"
+                   alt="Bolso Emergencia" class="card-thumb" loading="lazy" />
+              <div class="media-overlay">
+                <div class="btn-play-circle"><i data-lucide="external-link"></i></div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="card-meta-row">
+                <span class="badge-tag"><i data-lucide="award"></i> Salud</span>
+                <span class="badge-tag badge-time"><i data-lucide="clock"></i> 15 min</span>
+              </div>
+              <h3 class="card-title">🎒 Kit de Emergencia Familiar</h3>
+              <p class="card-desc">Gestión y clasificación de suministros críticos del bolso de preparación ante catástrofes naturales.</p>
+              <div class="card-footer">
+                <span class="link-play">Iniciar simulación <i data-lucide="arrow-right"></i></span>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MAGIC COMPONENT: HexTaUI Toolbar (Floating) -->
+  <div class="hextaui-toolbar-wrapper" id="hextauiToolbar">
+    <nav class="hextaui-toolbar">
+      <div class="hextaui-search">
+        <i data-lucide="search"></i>
+        <input type="text" id="searchInput" placeholder="Buscar simulaciones..." oninput="handleSearch(this.value)">
+      </div>
+      
+      <button class="hextaui-btn" onclick="selectCategory('todos', null)" title="Filtros rápidos">
+        <i data-lucide="filter"></i>
+        <span>Limpiar</span>
+      </button>
+
+      <div class="toolbar-divider"></div>
+      
+      <div class="hextaui-actions">
+        <button class="hextaui-icon-btn" onclick="toggleTheme()" title="Modo oscuro/claro">
+          <i data-lucide="sun-moon" class="themeIcon"></i>
+        </button>
+        <button class="hextaui-icon-btn" onclick="toggleTweaks()" title="Personalizar estilo">
+          <i data-lucide="settings"></i>
+        </button>
+        <button class="hextaui-icon-btn" onclick="alert('Compartir enlaces')" title="Compartir">
+          <i data-lucide="share-2"></i>
+        </button>
+      </div>
+
+      <button class="hextaui-primary" onclick="scrollToTop()">
+        <i data-lucide="arrow-up"></i>
+        <span>Volver Arriba</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Tweaks Panel -->
+  <div class="tweaks-panel" id="tweaksPanel">
+    <div class="tweaks-header">
+      <div class="tweaks-title">
+        <i data-lucide="palette"></i>
+        <span>Personalizar</span>
+      </div>
+      <button onclick="toggleTweaks()" style="cursor: pointer; font-size: 18px; color: var(--muted); line-height: 1;">&times;</button>
+    </div>
+
+    <div class="tweaks-option">
+      <span class="tweaks-label">Color de Acento</span>
+      <div class="color-swatches">
+        <div class="color-swatch active" style="background: oklch(56% 0.21 250);" onclick="setAccentColor('blue', this)"></div>
+        <div class="color-swatch" style="background: oklch(52% 0.19 290);" onclick="setAccentColor('purple', this)"></div>
+        <div class="color-swatch" style="background: oklch(62% 0.17 160);" onclick="setAccentColor('emerald', this)"></div>
+      </div>
+    </div>
+
+    <div class="tweaks-option">
+      <span class="tweaks-label">Estilo de Tarjetas</span>
+      <select class="select-style" onchange="setCardStyle(this.value)">
+        <option value="lifted">Sombra Lifted</option>
+        <option value="flat">Línea Plana</option>
+        <option value="neubrutalist">Neubrutalism</option>
+      </select>
+    </div>
+
+    <div class="tweaks-option">
+      <span class="tweaks-label">Grosor de Bordes</span>
+      <select class="select-style" onchange="setBorderWidth(this.value)">
+        <option value="1px">Fino (1px)</option>
+        <option value="2px">Mediano (2px)</option>
+        <option value="0px">Sin bordes</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Script Logic -->
+  <script src="main.js"></script>
+</body>
+</html>

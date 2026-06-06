@@ -1,0 +1,7 @@
+# Planning files
+implementation_plan.md
+open_design_master_prompt.md
+
+# Backups
+*.backup.html
+*.original.html

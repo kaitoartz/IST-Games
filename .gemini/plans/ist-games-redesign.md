@@ -1,0 +1,8 @@
+- [x] Define Arcade / E-sports visual tokens (dark bg, neon accents, bold sans).
+- [x] Copy assets/template.html to index.html (backing up current index).
+- [x] Bind visual tokens to :root in index.html.
+- [x] Implement Hero section (Arcade style).
+- [x] Implement Game Grid section with 8 games using btn-card logic.
+- [x] Re-integrate JS: Web Audio, Vimeo hover (2s), Giphy toggle, and Filtering.
+- [x] Self-check with checklist.md and 5-dim critique.
+- [x] Emit final artifact.

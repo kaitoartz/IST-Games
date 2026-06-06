@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduPlay - Portal Educativo Gamificado</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Söhne', 'Avenir Next', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  
+  <!-- Global Styles -->
+  <style>
+    :root {
+      --bg: #f8fafc;
+    }
+    body {
+      background-color: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script>
+    // Lucide React UMD expects lowercase 'react' global
+    window.react = window.React;
+  </script>
+  
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
+  
+  <!-- Framer Motion -->
+  <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide-react@0.292.0/dist/umd/lucide-react.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { motion, AnimatePresence } = window.Motion;
+    const { ChevronRight, Star, Play, Award, Zap, BookOpen, FlaskConical, Trophy, User, ArrowRight, CheckCircle2, XCircle, Gamepad2, Brain, Compass, Users } = window.LucideReact;
+
+    // --- MOCK DATA ---
+    const MOCK_USER = {
+      name: "Leo",
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Leo&backgroundColor=ffdfbf",
+      level: 12,
+      xp: 4500,
+      nextLevelXp: 5000,
+      streak: 5,
+      completedChallenges: 34,
+      badges: [
+        { id: 1, name: "Matemático Veloz", icon: Zap, color: "text-yellow-500", bg: "bg-yellow-100" },
+        { id: 2, name: "Lector Curioso", icon: BookOpen, color: "text-blue-500", bg: "bg-blue-100" },
+        { id: 3, name: "Científico Loco", icon: FlaskConical, color: "text-green-500", bg: "bg-green-100" }
+      ]
+    };
+
+    const MOCK_GAMES = [
+      { id: "g1", title: "Aventura Matemática", subject: "Matemáticas", level: "8-10", duration: "10 min", points: 150, color: "from-blue-500 to-cyan-400" },
+      { id: "g2", title: "Memoria Espacial", subject: "Memoria", level: "5-7", duration: "5 min", points: 100, color: "from-purple-500 to-pink-400" },
+      { id: "g3", title: "Laboratorio Químico", subject: "Ciencias", level: "11-13", duration: "15 min", points: 200, color: "from-green-500 to-emerald-400" },
+      { id: "g4", title: "Lógica de Bloques", subject: "Programación", level: "11-13", duration: "20 min", points: 250, color: "from-orange-500 to-yellow-400" },
+      { id: "g5", title: "Palabras Mágicas", subject: "Lectura", level: "5-7", duration: "10 min", points: 120, color: "from-red-500 to-rose-400" },
+      { id: "g6", title: "Safari en Inglés", subject: "Inglés", level: "8-10", duration: "15 min", points: 180, color: "from-indigo-500 to-violet-400" }
+    ];
+
+    const MOCK_QUIZ = {
+      title: "Aventura Matemática",
+      questions: [
+        { id: 1, question: "¿Cuánto es 7 + 8?", options: ["14", "15", "16", "13"], correct: 1 },
+        { id: 2, question: "Si tienes 3 manzanas y te dan 4 más, ¿cuántas tienes?", options: ["6", "8", "7", "9"], correct: 2 },
+        { id: 3, question: "¿Cuál es el doble de 6?", options: ["10", "12", "14", "18"], correct: 1 }
+      ]
+    };
+
+    // --- REUSABLE COMPONENTS ---
+    const Button = ({ children, variant = 'primary', size = 'md', className = '', ...props }) => {
+      const base = "inline-flex items-center justify-center rounded-xl font-semibold transition-all duration-300 active:scale-95";
+      const variants = {
+        primary: "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg shadow-blue-500/30",
+        secondary: "bg-white text-zinc-800 border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 shadow-sm",
+        ghost: "bg-transparent text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+      };
+      const sizes = { sm: "px-4 py-2 text-sm", md: "px-6 py-3 text-base", lg: "px-8 py-4 text-lg" };
+      return (
+        <button className={`${base} ${variants[variant]} ${sizes[size]} ${className}`} {...props}>
+          {children}
+        </button>
+      );
+    };
+
+    const GradientCard = ({ title, subject, level, duration, points, color, onClick }) => (
+      <motion.div 
+        whileHover={{ y: -8, scale: 1.02 }}
+        className="relative flex flex-col justify-between h-full w-full overflow-hidden rounded-3xl p-6 shadow-sm border border-zinc-100 bg-white cursor-pointer group"
+        onClick={onClick}
+      >
+        <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-5 group-hover:opacity-10 transition-opacity duration-500`} />
+        <div className="z-10 flex flex-col h-full">
+          <div className="flex justify-between items-start mb-4">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700">{subject}</span>
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-yellow-500 bg-yellow-50 px-2 py-1 rounded-full">
+              <Star size={14} fill="currentColor" /> {points}
+            </span>
+          </div>
+          <div className="flex-grow">
+            <h3 className="text-xl font-bold text-zinc-900 mb-2">{title}</h3>
+            <div className="flex items-center gap-3 text-sm text-zinc-500">
+              <span className="flex items-center gap-1"><User size={14}/> Nivel {level}</span>
+              <span className="flex items-center gap-1"><Play size={14}/> {duration}</span>
+            </div>
+          </div>
+          <div className="mt-6 flex items-center justify-between">
+            <div className="flex -space-x-2">
+              {[1,2,3].map(i => (
+                <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-zinc-200" style={{backgroundImage: `url(https://api.dicebear.com/7.x/avataaars/svg?seed=${i}&backgroundColor=e2e8f0)`}} />
+              ))}
+            </div>
+            <div className="w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center group-hover:bg-blue-600 transition-colors">
+              <Play size={18} fill="currentColor" className="ml-1"/>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+
+    // --- VIEWS ---
+    const Landing = ({ onNavigate }) => (
+      <div className="min-h-screen pt-20">
+        <section className="relative overflow-hidden px-6 lg:px-8 py-20 lg:py-32 max-w-7xl mx-auto">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-blue-100/50 to-transparent rounded-full blur-3xl -z-10" />
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} className="text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 font-semibold text-sm mb-6">
+                <Star size={16} fill="currentColor"/> Plataforma #1 de Aprendizaje Gamificado
+              </div>
+              <h1 className="text-5xl lg:text-7xl font-extrabold text-zinc-900 tracking-tight mb-6 leading-tight">
+                Aprende jugando, <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">crece ganando.</span>
+              </h1>
+              <p className="text-lg lg:text-xl text-zinc-600 mb-10 max-w-2xl mx-auto lg:mx-0">
+                Convierte cada lección en una aventura. Retos cortos, medallas y mucha diversión para entrenar tu mente todos los días.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <Button size="lg" onClick={() => onNavigate('catalog')} className="gap-2">Explorar Juegos <ArrowRight size={20}/></Button>
+                <Button variant="secondary" size="lg" onClick={() => onNavigate('dashboard')}>Ver mi progreso</Button>
+              </div>
+            </motion.div>
+            
+            <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }} className="relative">
+              <div className="relative w-full aspect-square max-w-lg mx-auto">
+                <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-3xl transform rotate-3 opacity-20 blur-xl" />
+                <div className="absolute inset-0 bg-white border border-zinc-200 rounded-3xl shadow-2xl overflow-hidden p-6 flex flex-col gap-4">
+                  <div className="flex justify-between items-center pb-4 border-b border-zinc-100">
+                    <div className="flex gap-3 items-center">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600"><Trophy size={24}/></div>
+                      <div>
+                        <div className="font-bold text-zinc-900">Nivel 12 Alcanzado</div>
+                        <div className="text-sm text-zinc-500">¡Sigue así, Leo!</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-yellow-500 flex items-center gap-1"><Star size={16} fill="currentColor"/> 4,500</div>
+                      <div className="text-xs text-zinc-400">XP Total</div>
+                    </div>
+                  </div>
+                  <div className="flex-grow grid grid-cols-2 gap-4">
+                    <div className="bg-orange-50 rounded-2xl p-4 flex flex-col justify-center items-center text-center">
+                      <Zap size={32} className="text-orange-500 mb-2"/>
+                      <div className="font-bold text-orange-900">Racha</div>
+                      <div className="text-sm text-orange-700">5 días</div>
+                    </div>
+                    <div className="bg-green-50 rounded-2xl p-4 flex flex-col justify-center items-center text-center">
+                      <Star size={32} className="text-green-500 mb-2"/>
+                      <div className="font-bold text-green-900">Precisión</div>
+                      <div className="text-sm text-green-700">92%</div>
+                    </div>
+                  </div>
+                  <Button variant="primary" className="w-full" onClick={() => onNavigate('catalog')}>Jugar Reto Diario</Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Benefits Section */}
+        <section className="py-20 bg-zinc-900 text-white px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl lg:text-4xl font-bold mb-4">¿Por qué aprender con EduPlay?</h2>
+              <p className="text-zinc-400 max-w-2xl mx-auto text-lg">Diseñado por expertos en educación para mantener la motivación alta mientras se adquieren nuevas habilidades.</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                { title: "Aprende Jugando", desc: "Lecciones transformadas en retos interactivos que no se sienten como tareas.", icon: Brain, color: "text-purple-400" },
+                { title: "Progreso Adaptativo", desc: "El nivel de dificultad se ajusta automáticamente según tus habilidades.", icon: Compass, color: "text-cyan-400" },
+                { title: "Comunidad Segura", desc: "Un entorno controlado para que niños y padres supervisen el aprendizaje.", icon: Users, color: "text-green-400" }
+              ].map((b, i) => (
+                <div key={i} className="bg-zinc-800/50 border border-zinc-700/50 p-8 rounded-3xl">
+                  <b.icon size={32} className={`${b.color} mb-6`}/>
+                  <h3 className="text-xl font-bold mb-3">{b.title}</h3>
+                  <p className="text-zinc-400 leading-relaxed">{b.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Featured Games */}
+        <section className="px-6 lg:px-8 py-20 bg-white border-t border-zinc-100">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex justify-between items-end mb-12">
+              <div>
+                <h2 className="text-3xl font-bold text-zinc-900 mb-4">Juegos Destacados</h2>
+                <p className="text-zinc-600">Empieza con los favoritos de la comunidad.</p>
+              </div>
+              <Button variant="ghost" onClick={() => onNavigate('catalog')} className="hidden sm:flex gap-2">Ver todos <ArrowRight size={16}/></Button>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {MOCK_GAMES.slice(0,3).map(game => (
+                <GradientCard key={game.id} {...game} onClick={() => onNavigate('game', { gameId: game.id })} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="bg-zinc-50 border-t border-zinc-200 py-12 px-6 lg:px-8 text-center text-zinc-500">
+          <div className="flex items-center justify-center gap-2 mb-4 text-zinc-900">
+            <Gamepad2 size={24} className="text-blue-600"/> <span className="font-bold text-xl">EduPlay</span>
+          </div>
+          <p>© 2026 EduPlay. Diseñado con propósito educativo.</p>
+        </footer>
+      </div>
+    );
+
+    const Catalog = ({ onNavigate }) => {
+      const [filter, setFilter] = useState('Todos');
+      const subjects = ['Todos', 'Matemáticas', 'Ciencias', 'Lectura', 'Programación'];
+      const filtered = filter === 'Todos' ? MOCK_GAMES : MOCK_GAMES.filter(g => g.subject.includes(filter) || (filter==='Lectura' && g.subject==='Inglés'));
+
+      return (
+        <div className="min-h-screen pt-24 pb-20 px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-12">
+              <h1 className="text-4xl font-extrabold text-zinc-900 mb-4">Catálogo de Juegos</h1>
+              <p className="text-xl text-zinc-600">Encuentra tu próximo reto por materia, edad o dificultad.</p>
+            </div>
+            <div className="flex overflow-x-auto gap-3 pb-4 mb-8 scrollbar-hide">
+              {subjects.map(subj => (
+                <button
+                  key={subj} onClick={() => setFilter(subj)}
+                  className={`whitespace-nowrap px-6 py-2.5 rounded-full font-semibold transition-colors ${filter === subj ? 'bg-zinc-900 text-white shadow-md' : 'bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-50'}`}
+                >{subj}</button>
+              ))}
+            </div>
+            <motion.div layout className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <AnimatePresence>
+                {filtered.map((game) => (
+                  <motion.div key={game.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}>
+                    <GradientCard {...game} onClick={() => onNavigate('game', { gameId: game.id })} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          </div>
+        </div>
+      );
+    };
+
+    const Dashboard = ({ onNavigate }) => {
+      const progressPct = (MOCK_USER.xp / MOCK_USER.nextLevelXp) * 100;
+      return (
+        <div className="min-h-screen pt-24 pb-20 px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto space-y-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm">
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  <img src={MOCK_USER.avatar} alt="Avatar" className="w-24 h-24 rounded-full bg-orange-100 border-4 border-white shadow-md" />
+                  <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full border-2 border-white">Lvl {MOCK_USER.level}</div>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-extrabold text-zinc-900 mb-1">¡Hola, {MOCK_USER.name}!</h1>
+                  <p className="text-zinc-500 font-medium">Estás a {MOCK_USER.nextLevelXp - MOCK_USER.xp} XP del nivel {MOCK_USER.level + 1}</p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="bg-yellow-50 px-6 py-4 rounded-2xl border border-yellow-100 flex flex-col items-center min-w-[120px]">
+                  <Zap className="text-yellow-500 mb-1" size={24}/>
+                  <span className="text-2xl font-bold text-yellow-700">{MOCK_USER.streak}</span>
+                  <span className="text-xs text-yellow-600 font-medium uppercase tracking-wide">Días seguidos</span>
+                </div>
+                <div className="bg-blue-50 px-6 py-4 rounded-2xl border border-blue-100 flex flex-col items-center min-w-[120px]">
+                  <Star className="text-blue-500 mb-1" size={24}/>
+                  <span className="text-2xl font-bold text-blue-700">{MOCK_USER.xp}</span>
+                  <span className="text-xs text-blue-600 font-medium uppercase tracking-wide">XP Total</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-8">
+                <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm">
+                  <h3 className="text-xl font-bold text-zinc-900 mb-6">Progreso de Nivel</h3>
+                  <div className="relative h-6 bg-zinc-100 rounded-full overflow-hidden mb-3">
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${progressPct}%` }} transition={{ duration: 1 }} className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full" />
+                  </div>
+                  <div className="flex justify-between text-sm font-medium text-zinc-500">
+                    <span>Lvl {MOCK_USER.level} ({MOCK_USER.xp} XP)</span>
+                    <span>Lvl {MOCK_USER.level + 1} ({MOCK_USER.nextLevelXp} XP)</span>
+                  </div>
+                </div>
+                
+                <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-zinc-900">Retos Diarios</h3>
+                    <span className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">2/3 Completados</span>
+                  </div>
+                  <div className="space-y-4">
+                    {[
+                      { title: "Juega 2 partidas de Matemáticas", xp: 50, done: true },
+                      { title: "Mantén tu racha de días", xp: 20, done: true },
+                      { title: "Obtén 100% en Ciencias", xp: 100, done: false }
+                    ].map((task, i) => (
+                      <div key={i} className={`flex items-center justify-between p-4 rounded-2xl border ${task.done ? 'bg-zinc-50 border-zinc-200' : 'bg-white border-zinc-200 shadow-sm'}`}>
+                        <div className="flex items-center gap-4">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${task.done ? 'bg-green-100 text-green-600' : 'bg-zinc-100 text-zinc-400'}`}>
+                            <CheckCircle2 size={18} />
+                          </div>
+                          <span className={`font-medium ${task.done ? 'text-zinc-500 line-through' : 'text-zinc-900'}`}>{task.title}</span>
+                        </div>
+                        <span className="text-sm font-bold text-yellow-500 flex items-center gap-1"><Star size={14} fill="currentColor"/> {task.xp}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-8">
+                <div className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm">
+                  <h3 className="text-xl font-bold text-zinc-900 mb-6">Tus Insignias</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {MOCK_USER.badges.map(b => (
+                      <div key={b.id} className={`flex flex-col items-center text-center p-4 rounded-2xl ${b.bg}`}>
+                        <div className={`w-12 h-12 rounded-full bg-white flex items-center justify-center mb-3 shadow-sm ${b.color}`}>
+                          <b.icon size={24} />
+                        </div>
+                        <span className="text-xs font-bold text-zinc-900 leading-tight">{b.name}</span>
+                      </div>
+                    ))}
+                    <div className="flex flex-col items-center justify-center text-center p-4 rounded-2xl border-2 border-dashed border-zinc-200 text-zinc-400">
+                      <div className="w-12 h-12 rounded-full bg-zinc-50 flex items-center justify-center mb-3"><Trophy size={20} /></div>
+                      <span className="text-xs font-medium">Bloqueado</span>
+                    </div>
+                  </div>
+                </div>
+                <Button variant="primary" className="w-full py-6 text-lg shadow-xl shadow-blue-500/20" onClick={() => onNavigate('catalog')}>
+                  ¡Seguir Jugando!
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const QuizGame = ({ onNavigate }) => {
+      const [currentQ, setCurrentQ] = useState(0);
+      const [selected, setSelected] = useState(null);
+      const [status, setStatus] = useState('idle');
+      const [score, setScore] = useState(0);
+
+      const q = MOCK_QUIZ.questions[currentQ];
+
+      const handleSelect = (idx) => {
+        if (status !== 'idle') return;
+        setSelected(idx);
+        if (idx === q.correct) {
+          setStatus('correct');
+          setScore(s => s + 50);
+        } else {
+          setStatus('incorrect');
+        }
+      };
+
+      const handleNext = () => {
+        if (currentQ < MOCK_QUIZ.questions.length - 1) {
+          setCurrentQ(c => c + 1);
+          setSelected(null);
+          setStatus('idle');
+        } else setStatus('finished');
+      };
+
+      if (status === 'finished') {
+        return (
+          <div className="min-h-screen flex items-center px-6 pt-20 pb-10">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md w-full mx-auto p-10 bg-white rounded-[2rem] border border-zinc-100 shadow-xl text-center">
+              <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6"><Trophy size={48} className="text-yellow-500" /></div>
+              <h2 className="text-3xl font-extrabold text-zinc-900 mb-2">¡Misión Cumplida!</h2>
+              <p className="text-zinc-500 mb-8">Has completado el reto con éxito.</p>
+              <div className="bg-blue-50 rounded-2xl p-6 mb-8">
+                <div className="text-blue-600 font-bold mb-1">Recompensa</div>
+                <div className="text-4xl font-black text-blue-700 flex items-center justify-center gap-2"><Star fill="currentColor" size={32}/> +{score} XP</div>
+              </div>
+              <div className="flex flex-col gap-3">
+                <Button onClick={() => onNavigate('dashboard')} className="w-full py-4 text-lg">Ir a mi Dashboard</Button>
+                <Button variant="ghost" onClick={() => onNavigate('catalog')} className="w-full">Jugar otro reto</Button>
+              </div>
+            </motion.div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen flex flex-col items-center pt-24 pb-20 px-6">
+          <div className="w-full max-w-2xl">
+            <div className="flex items-center justify-between mb-8">
+              <Button variant="ghost" size="sm" onClick={() => onNavigate('catalog')} className="-ml-4">&larr; Salir</Button>
+              <div className="font-bold text-zinc-400 bg-white px-4 py-1.5 rounded-full border border-zinc-100 shadow-sm">
+                Pregunta {currentQ + 1} de {MOCK_QUIZ.questions.length}
+              </div>
+              <div className="font-bold text-yellow-500 bg-yellow-50 border border-yellow-100 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-1">
+                <Star size={16} fill="currentColor"/> {score}
+              </div>
+            </div>
+            
+            <div className="h-3 bg-zinc-200 rounded-full mb-12 overflow-hidden shadow-inner">
+              <motion.div className="h-full bg-blue-500" initial={{ width: `${(currentQ / MOCK_QUIZ.questions.length) * 100}%` }} animate={{ width: `${((currentQ + (status!=='idle'?1:0)) / MOCK_QUIZ.questions.length) * 100}%` }} />
+            </div>
+            
+            <motion.div key={currentQ} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white p-8 md:p-12 rounded-[2rem] shadow-lg shadow-zinc-200/50 border border-zinc-100">
+              <h2 className="text-2xl md:text-3xl font-extrabold text-zinc-900 mb-10 text-center leading-tight">{q.question}</h2>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {q.options.map((opt, i) => {
+                  const isSelected = selected === i;
+                  const isCorrect = i === q.correct;
+                  let btnClass = "bg-zinc-50 border-2 border-zinc-200 text-zinc-700 hover:bg-zinc-100 hover:border-zinc-300";
+                  if (status !== 'idle') {
+                    if (isCorrect) btnClass = "bg-green-50 border-2 border-green-500 text-green-700 shadow-sm";
+                    else if (isSelected) btnClass = "bg-red-50 border-2 border-red-500 text-red-700 shadow-sm";
+                    else btnClass = "bg-zinc-50 border-2 border-zinc-200 text-zinc-400 opacity-50";
+                  }
+                  return (
+                    <button key={i} onClick={() => handleSelect(i)} disabled={status !== 'idle'} className={`relative p-6 rounded-2xl font-bold text-xl transition-all duration-300 transform active:scale-95 ${btnClass}`}>
+                      {opt}
+                      {status !== 'idle' && isCorrect && <motion.div initial={{scale:0}} animate={{scale:1}} className="absolute -top-3 -right-3 bg-white rounded-full text-green-500 shadow-md"><CheckCircle2 size={28}/></motion.div>}
+                      {status !== 'idle' && isSelected && !isCorrect && <motion.div initial={{scale:0}} animate={{scale:1}} className="absolute -top-3 -right-3 bg-white rounded-full text-red-500 shadow-md"><XCircle size={28}/></motion.div>}
+                    </button>
+                  )
+                })}
+              </div>
+              <AnimatePresence>
+                {status !== 'idle' && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-10 flex justify-center">
+                    <Button size="lg" onClick={handleNext} className="w-full sm:w-auto px-12 py-4 text-lg">
+                      {status === 'correct' ? '¡Excelente! Continuar' : 'Siguiente pregunta'} <ArrowRight className="ml-2"/>
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </div>
+        </div>
+      );
+    };
+
+    const Navbar = ({ currentView, onNavigate }) => {
+      const navs = [
+        { id: 'landing', label: 'Inicio' },
+        { id: 'catalog', label: 'Juegos' },
+        { id: 'dashboard', label: 'Mi Progreso' }
+      ];
+      return (
+        <nav className="fixed top-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-xl border-b border-zinc-100 z-50 flex items-center px-6 lg:px-8">
+          <div className="max-w-7xl w-full mx-auto flex justify-between items-center">
+            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => onNavigate('landing')}>
+              <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform"><Gamepad2 size={20} /></div>
+              <span className="font-extrabold text-2xl tracking-tight text-zinc-900 hidden sm:block">EduPlay</span>
+            </div>
+            <div className="hidden md:flex items-center gap-1 bg-zinc-50/80 p-1.5 rounded-full border border-zinc-200/60 shadow-sm">
+              {navs.map(nav => (
+                <button key={nav.id} onClick={() => onNavigate(nav.id)} className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${currentView === nav.id ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50'}`}>
+                  {nav.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" className="hidden lg:flex" onClick={() => onNavigate('dashboard')}>Perfil Padres</Button>
+              <Button size="sm" onClick={() => onNavigate('catalog')}>Jugar Ahora</Button>
+            </div>
+          </div>
+        </nav>
+      );
+    }
+
+    const App = () => {
+      const [view, setView] = useState('landing');
+      const [params, setParams] = useState({});
+
+      const navigate = (newView, newParams = {}) => {
+        setParams(newParams);
+        setView(newView);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      const views = {
+        landing: <Landing onNavigate={navigate} />,
+        catalog: <Catalog onNavigate={navigate} />,
+        dashboard: <Dashboard onNavigate={navigate} />,
+        game: <QuizGame onNavigate={navigate} gameId={params.gameId} />
+      };
+
+      return (
+        <div className="w-full min-h-screen relative font-sans text-zinc-900 selection:bg-blue-200">
+          <Navbar currentView={view} onNavigate={navigate} />
+          <AnimatePresence mode="wait">
+            <motion.div key={view} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
+              {views[view]}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
